@@ -1,320 +1,192 @@
 package kz.tungo.sdk.kotlin
 
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-import java.time.Duration
-import java.util.Base64
-import java.util.Locale
-import java.util.UUID
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-import kotlin.math.abs
-import kotlin.math.min
-import kotlin.math.roundToLong
+import java.io.Closeable
+import kotlin.time.Duration
+import kz.tungo.sdk.kotlin.errors.TungoValidationException
+import kz.tungo.sdk.kotlin.errors.WebhookVerificationException
+import kz.tungo.sdk.kotlin.internal.HttpEngine
+import kz.tungo.sdk.kotlin.models.AutomationHookAccepted
+import kz.tungo.sdk.kotlin.models.WebhookEvent
+import kz.tungo.sdk.kotlin.resources.ApiKeysResource
+import kz.tungo.sdk.kotlin.resources.AutomationsResource
+import kz.tungo.sdk.kotlin.resources.BatchesResource
+import kz.tungo.sdk.kotlin.resources.ChatResource
+import kz.tungo.sdk.kotlin.resources.CompaniesResource
+import kz.tungo.sdk.kotlin.resources.EsfResource
+import kz.tungo.sdk.kotlin.resources.FeedResource
+import kz.tungo.sdk.kotlin.resources.FormsResource
+import kz.tungo.sdk.kotlin.resources.OnecResource
+import kz.tungo.sdk.kotlin.resources.PlatformResource
+import kz.tungo.sdk.kotlin.resources.ProposalsResource
+import kz.tungo.sdk.kotlin.resources.WebhooksResource
+import kz.tungo.sdk.kotlin.resources.WorkspacesResource
+import kz.tungo.sdk.kotlin.webhooks.TungoWebhooks
+import okhttp3.Dispatcher
+import okhttp3.OkHttpClient
 
-data class SSEEvent(val event: String, val raw: String)
-data class RateLimitInfo(val limit: Long, val remaining: Long, val reset: Long)
+/**
+ * Client of the Tungo Platform API.
+ *
+ * A client is immutable and safe to share between coroutines and threads; create one and reuse
+ * it. Every operation is a suspending function, so a call is cancelled by cancelling its
+ * coroutine.
+ *
+ *     val client = TungoClient { apiKey = "tg_..." }
+ *     val companies = client.companies.list()
+ */
+public class TungoClient internal constructor(
+    /** The configuration of this client. */
+    public val options: TungoClientOptions,
+    private val httpClient: OkHttpClient,
+    private val ownsHttpClient: Boolean,
+) : Closeable {
+    internal val engine: HttpEngine = HttpEngine(options, httpClient)
 
-open class TungoError(
-    val status: Int,
-    val code: String,
-    override val message: String,
-    val hint: String? = null,
-    val requestId: String? = null,
-    val retryAfter: Double? = null,
-) : RuntimeException(message)
+    /** Организации (workspace), доступные ключу API */
+    public val workspaces: WorkspacesResource = WorkspacesResource(engine)
 
-object TungoMoney {
-    fun toTiyn(amount: Double): Long = (amount * 100.0).roundToLong()
-    fun toTenge(tiyn: Long): Double = tiyn / 100.0
+    /** Компании организации и их карточки */
+    public val companies: CompaniesResource = CompaniesResource(engine)
 
-    fun formatTiyn(tiyn: Long, currency: String = "KZT"): String {
-        val symbol = when (currency.trim().uppercase(Locale.ROOT)) {
-            "", "KZT" -> "₸"
-            "USD" -> "$"
-            "EUR" -> "€"
-            "RUB" -> "₽"
-            else -> currency.trim().uppercase(Locale.ROOT)
-        }
-        val neg = tiyn < 0
-        val a = abs(tiyn)
-        val whole = (a / 100).toString()
-        val frac = a % 100
-        val grouped = buildString {
-            for (i in whole.indices) {
-                if (i > 0 && (whole.length - i) % 3 == 0) append(' ')
-                append(whole[i])
-            }
-        }
-        val sign = if (neg) "-" else ""
-        return String.format(Locale.ROOT, "%s%s,%02d %s", sign, grouped, frac, symbol)
+    /** Баланс платформы, книга движений, отчёты о расходе, лимиты, аудит и тарифы моделей */
+    public val platform: PlatformResource = PlatformResource(engine)
+
+    /** Сведения о текущем ключе API и статистика его расхода */
+    public val apiKeys: ApiKeysResource = ApiKeysResource(engine)
+
+    /** Исходящие вебхуки организации (Svix): адреса, каталог событий, доставки и проверка подписи */
+    public val webhooks: WebhooksResource = WebhooksResource(engine)
+
+    /** Диалоги с ИИ-бухгалтером: вопросы, потоковый чат (SSE), подсчёт токенов и история */
+    public val chat: ChatResource = ChatResource(engine)
+
+    /** Предложения документов ИИ-бухгалтера: просмотр, одобрение записи в 1С и отклонение */
+    public val proposals: ProposalsResource = ProposalsResource(engine)
+
+    /** Лента событий и предложений компании (страницы и живой поток SSE) */
+    public val feed: FeedResource = FeedResource(engine)
+
+    /** Пачки обработки банковских выписок, входящих ЭСФ и DirectBank */
+    public val batches: BatchesResource = BatchesResource(engine)
+
+    /** Входящие и исходящие электронные счета-фактуры (ИС ЭСФ) */
+    public val esf: EsfResource = EsfResource(engine)
+
+    /** Налоговые формы (ФНО 100.00 и др.): сборка, проверка ИСНА и разрывы данных */
+    public val forms: FormsResource = FormsResource(engine)
+
+    /** Состояние подключения компании к базе 1С */
+    public val onec: OnecResource = OnecResource(engine)
+
+    /** Автоматизации компании: входящие хуки, сценарии, цепочки шагов, запуски и уровень автономности ИИ */
+    public val automations: AutomationsResource = AutomationsResource(engine)
+
+    /**
+     * Returns a client with some options changed. It shares the connection pool of this client,
+     * and closing it does nothing.
+     */
+    public fun withOptions(block: TungoClientOptions.Builder.() -> Unit): TungoClient {
+        val changed = options.newBuilder().apply(block).build()
+        return TungoClient(changed, changed.httpClient ?: httpClient, false)
     }
 
-    /** Проверяет контрольную сумму 12-значного БИН или ИИН Республики Казахстан (модуль 11, два прохода). */
-    fun isValidBinIin(value: String): Boolean {
-        if (value.length != 12 || !value.all { it.isDigit() }) return false
-        val digits = IntArray(12) { value[it] - '0' }
-        val w1 = intArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
-        var control = (0 until 11).sumOf { digits[it] * w1[it] } % 11
-        if (control == 10) {
-            val w2 = intArrayOf(3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 2)
-            control = (0 until 11).sumOf { digits[it] * w2[it] } % 11
-        }
-        return control < 10 && control == digits[11]
-    }
-}
-
-object TungoWebhooks {
-    fun signHookPayload(rawBody: String, secret: String): String {
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(secret.toByteArray(StandardCharsets.UTF_8), "HmacSHA256"))
-        val digest = mac.doFinal(rawBody.toByteArray(StandardCharsets.UTF_8))
-        return "sha256=" + digest.joinToString("") { "%02x".format(it) }
-    }
-
-    fun verifyHookSignature(rawBody: String, signature: String, secret: String): Boolean {
-        val trimmed = signature.trim()
-        if (trimmed.isEmpty() || secret.isEmpty()) return false
-        val hex = trimmed.removePrefix("sha256=").lowercase(Locale.ROOT)
-        val expected = signHookPayload(rawBody, secret).removePrefix("sha256=").lowercase(Locale.ROOT)
-        return MessageDigest.isEqual(
-            expected.toByteArray(StandardCharsets.UTF_8),
-            hex.toByteArray(StandardCharsets.UTF_8),
-        )
-    }
-
-    fun verifyWebhookSignature(
-        rawBody: String,
+    /**
+     * Verifies the signature and the timestamp of an outgoing webhook (Standard Webhooks / Svix)
+     * and returns the typed event.
+     *
+     * @param body the raw request body, exactly as received
+     * @param headers the request headers; names are matched case-insensitively
+     * @param secret the signing secret (whsec_...); by default the webhook secret of the client
+     * @param tolerance the largest accepted distance between the timestamp and the system clock
+     * @throws WebhookVerificationException when the webhook cannot be trusted
+     */
+    public fun verifyWebhook(
+        body: String,
         headers: Map<String, String>,
-        secret: String,
-        nowUnix: Long? = null,
-        toleranceSec: Long = 300L,
-    ): String {
-        val norm = headers.entries.associate { it.key.lowercase(Locale.ROOT) to it.value }
-        val msgId = norm["svix-id"] ?: norm["webhook-id"] ?: throw TungoError(0, "webhook_error", "Missing svix-id")
-        val msgTs = norm["svix-timestamp"] ?: norm["webhook-timestamp"] ?: throw TungoError(0, "webhook_error", "Missing svix-timestamp")
-        val msgSig = norm["svix-signature"] ?: norm["webhook-signature"] ?: throw TungoError(0, "webhook_error", "Missing svix-signature")
-        val ts = msgTs.toLongOrNull() ?: throw TungoError(0, "webhook_error", "Invalid svix-timestamp")
-        if (nowUnix != null && toleranceSec > 0 && abs(nowUnix - ts) > toleranceSec) {
-            throw TungoError(0, "webhook_error", "Webhook timestamp outside tolerance")
+        secret: String? = null,
+        tolerance: Duration = TungoWebhooks.DEFAULT_TOLERANCE,
+    ): WebhookEvent = TungoWebhooks.verify(body, headers, webhookSecret(secret), tolerance)
+
+    /** Variant of [verifyWebhook] that reads the headers through a lookup function such as request::getHeader. */
+    public fun verifyWebhook(
+        body: String,
+        secret: String? = null,
+        tolerance: Duration = TungoWebhooks.DEFAULT_TOLERANCE,
+        header: (name: String) -> String?,
+    ): WebhookEvent = TungoWebhooks.verify(body.toByteArray(Charsets.UTF_8), webhookSecret(secret), tolerance, TungoWebhooks.SYSTEM_CLOCK, header)
+
+    /**
+     * Sends an event to an incoming hook (POST /hooks/{token}). The API key is never sent. When a
+     * secret is given, the exact bytes of the payload are signed in the X-Signature header.
+     *
+     * @param token the hook token
+     * @param payload the body to send, byte for byte
+     * @param secret the signing secret of the hook, when it has one
+     * @param contentType media type of the payload
+     * @param eventId value of the X-Event-Id header, used by the API to drop duplicates
+     */
+    public suspend fun sendHook(
+        token: String,
+        payload: ByteArray,
+        secret: String? = null,
+        contentType: String = "application/json",
+        eventId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): AutomationHookAccepted {
+        if (secret != null && secret.isEmpty()) throw TungoValidationException("The hook secret must not be empty")
+        val signature = secret?.let { TungoWebhooks.hookSignatureHeader(payload, it) }
+        return automations.postHook(token = token, body = payload, contentType = contentType, eventId = eventId, signature = signature, requestOptions = requestOptions)
+    }
+
+    /** Variant of [sendHook] for a text payload, sent as UTF-8. */
+    public suspend fun sendHook(
+        token: String,
+        payload: String,
+        secret: String? = null,
+        contentType: String = "application/json",
+        eventId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): AutomationHookAccepted = sendHook(token, payload.toByteArray(Charsets.UTF_8), secret, contentType, eventId, requestOptions)
+
+    /**
+     * Releases the threads and connections of this client. A client built around a caller-supplied
+     * OkHttpClient, or derived with [withOptions], leaves them alone.
+     */
+    override fun close() {
+        if (!ownsHttpClient) return
+        httpClient.dispatcher.executorService.shutdown()
+        httpClient.connectionPool.evictAll()
+    }
+
+    /** The API key is never printed. */
+    override fun toString(): String = "TungoClient($options)"
+
+    private fun webhookSecret(explicit: String?): String = explicit ?: options.webhookSecret
+        ?: throw WebhookVerificationException(
+            WebhookVerificationException.Reason.INVALID_SECRET,
+            "No webhook secret: pass it to the call, set webhookSecret on the client or TUNGO_WEBHOOK_SECRET",
+        )
+
+    internal companion object {
+        fun create(options: TungoClientOptions): TungoClient {
+            val supplied = options.httpClient
+            if (supplied != null) return TungoClient(options, supplied, false)
+            val dispatcher = Dispatcher()
+            dispatcher.maxRequests = 256
+            dispatcher.maxRequestsPerHost = 256
+            return TungoClient(options, OkHttpClient.Builder().dispatcher(dispatcher).build(), true)
         }
-        val keyBytes = Base64.getDecoder().decode(secret.removePrefix("whsec_"))
-        val signed = "$msgId.$msgTs.$rawBody"
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(keyBytes, "HmacSHA256"))
-        val expectedB64 = Base64.getEncoder().encodeToString(mac.doFinal(signed.toByteArray(StandardCharsets.UTF_8)))
-        val matched = msgSig.trim().split(Regex("\\s+")).any { part ->
-            part.startsWith("v1,") && MessageDigest.isEqual(
-                expectedB64.toByteArray(StandardCharsets.UTF_8),
-                part.removePrefix("v1,").toByteArray(StandardCharsets.UTF_8),
-            )
-        }
-        if (!matched) throw TungoError(0, "webhook_error", "Invalid svix-signature")
-        return rawBody
     }
 }
 
-class TungoClient(
-    private val apiKey: String? = System.getenv("TUNGO_API_KEY"),
-    baseUrl: String = System.getenv("TUNGO_BASE_URL") ?: "https://api.tungo.kz",
-    private val workspaceId: String? = System.getenv("TUNGO_WORKSPACE_ID"),
-    private val companyId: String? = System.getenv("TUNGO_COMPANY_ID"),
-    private val maxRetries: Int = 2,
-) {
-    private val baseUrl: String = baseUrl.trimEnd('/')
-    private val httpClient: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
-    @Volatile
-    var lastRateLimit: RateLimitInfo? = null
-        private set
-
-    val workspaces: WorkspacesResource = WorkspacesResource(this)
-    val companies: CompaniesResource = CompaniesResource(this)
-    val platform: PlatformResource = PlatformResource(this)
-    val apiKeys: ApiKeysResource = ApiKeysResource(this)
-    val webhooks: WebhooksResource = WebhooksResource(this)
-    val chat: ChatResource = ChatResource(this)
-    val proposals: ProposalsResource = ProposalsResource(this)
-    val feed: FeedResource = FeedResource(this)
-    val batches: BatchesResource = BatchesResource(this)
-    val esf: EsfResource = EsfResource(this)
-    val forms: FormsResource = FormsResource(this)
-    val onec: OnecResource = OnecResource(this)
-    val automations: AutomationsResource = AutomationsResource(this)
-
-    fun resolveCompanyId(explicit: String? = null): String =
-        explicit?.takeIf { it.isNotEmpty() } ?: companyId?.takeIf { it.isNotEmpty() }
-            ?: throw TungoError(0, "missing_company_id", "Не указан companyId")
-
-    fun resolveWorkspaceId(explicit: String? = null): String =
-        explicit?.takeIf { it.isNotEmpty() } ?: workspaceId?.takeIf { it.isNotEmpty() }
-            ?: throw TungoError(0, "missing_workspace_id", "Не указан workspaceId")
-
-    /** Быстрый синхронный запрос к ИИ-бухгалтеру (stream = false). */
-    fun ask(prompt: String, companyId: String? = null, dialogId: String? = null): Map<String, Any?> {
-        val params = if (!companyId.isNullOrEmpty()) mapOf("co" to companyId) else emptyMap()
-        val body = mutableMapOf<String, Any?>("message" to prompt, "stream" to false)
-        if (!dialogId.isNullOrEmpty()) body["dialog_id"] = dialogId
-        return chat.create(body, params)
-    }
-
-    /** Отправить событие во входящий хук /hooks/{token} с HMAC-SHA256 подписью. */
-    fun sendHook(token: String, payload: Map<String, Any?>, secret: String? = null): Map<String, Any?> {
-        val params = mutableMapOf<String, String>()
-        if (!secret.isNullOrEmpty()) {
-            params["X-Signature"] = TungoWebhooks.signHookPayload(toJson(payload), secret)
-        }
-        return automations.postHook(token, payload, params)
-    }
-
-    /** Дождаться завершения запуска сценария (state in done/error/cancelled/skipped). */
-    fun waitForRun(runId: String, companyId: String? = null, timeoutMs: Long = 120_000L): Map<String, Any?> {
-        val params = if (!companyId.isNullOrEmpty()) mapOf("co" to companyId) else emptyMap()
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (true) {
-            val run = automations.getRun(runId, params)
-            val st = run["state"] as? String
-            if (st == "done" || st == "error" || st == "cancelled" || st == "skipped") return run
-            if (System.currentTimeMillis() >= deadline) {
-                throw TungoError(0, "timeout", "Превышено время ожидания запуска $runId")
-            }
-            Thread.sleep(1000L)
-        }
-    }
-
-    /** Дождаться завершения задания пачки (running == false). */
-    fun waitForBatch(batchId: String, companyId: String? = null, timeoutMs: Long = 120_000L): Map<String, Any?> {
-        val params = if (!companyId.isNullOrEmpty()) mapOf("co" to companyId) else emptyMap()
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (true) {
-            val job = batches.get(batchId, params)
-            if (job["running"] != true) return job
-            if (System.currentTimeMillis() >= deadline) {
-                throw TungoError(0, "timeout", "Превышено время ожидания пачки $batchId")
-            }
-            Thread.sleep(1000L)
-        }
-    }
-
-    fun parseSse(rawStream: String): List<SSEEvent> {
-        val events = mutableListOf<SSEEvent>()
-        var eventType = ""
-        val dataLines = mutableListOf<String>()
-        for (line in rawStream.split(Regex("\\r?\\n"))) {
-            if (line.isEmpty()) {
-                if (eventType.isNotEmpty() || dataLines.isNotEmpty()) {
-                    events.add(SSEEvent(eventType.ifEmpty { "message" }, dataLines.joinToString("\n")))
-                    eventType = ""
-                    dataLines.clear()
-                }
-                continue
-            }
-            if (line.startsWith(":")) continue
-            when {
-                line.startsWith("event:") -> eventType = line.removePrefix("event:").trim()
-                line.startsWith("data:") -> dataLines.add(line.removePrefix("data:").removePrefix(" "))
-            }
-        }
-        if (eventType.isNotEmpty() || dataLines.isNotEmpty()) {
-            events.add(SSEEvent(eventType.ifEmpty { "message" }, dataLines.joinToString("\n")))
-        }
-        return events
-    }
-
-    fun request(
-        method: String,
-        path: String,
-        query: Map<String, String>,
-        body: Map<String, Any?>?,
-        auth: String,
-        idempotent: Boolean,
-        retrySafe: Boolean,
-    ): Map<String, Any?> {
-        val raw = executeHttp(method, path, query, body, auth, idempotent, retrySafe, "application/json")
-        if (raw.isBlank()) return emptyMap()
-        return mapOf("raw" to raw)
-    }
-
-    fun requestStream(
-        method: String,
-        path: String,
-        query: Map<String, String>,
-        body: Map<String, Any?>?,
-        auth: String,
-    ): Sequence<SSEEvent> {
-        val raw = executeHttp(method, path, query, body, auth, false, false, "text/event-stream")
-        return parseSse(raw).asSequence()
-    }
-
-    private fun executeHttp(
-        method: String,
-        path: String,
-        query: Map<String, String>,
-        body: Map<String, Any?>?,
-        auth: String,
-        idempotent: Boolean,
-        retrySafe: Boolean,
-        accept: String,
-    ): String {
-        val q = query.toMutableMap()
-        val idemKey = q.remove("idempotency_key") ?: if (idempotent) UUID.randomUUID().toString() else null
-        val sigHeader = q.remove("X-Signature")
-        val qs = q.entries.joinToString("&") {
-            "${URLEncoder.encode(it.key, StandardCharsets.UTF_8)}=${URLEncoder.encode(it.value, StandardCharsets.UTF_8)}"
-        }
-        val fullUrl = if (qs.isEmpty()) "$baseUrl$path" else "$baseUrl$path?$qs"
-        val jsonBody = body?.let { toJson(it) }
-        val maxAttempts = if (retrySafe || idempotent || method == "GET") (1 + maxRetries) else 1
-
-        for (attempt in 0 until maxAttempts) {
-            val rb = HttpRequest.newBuilder(URI.create(fullUrl))
-                .timeout(Duration.ofSeconds(30))
-                .header("Accept", accept)
-                .header("User-Agent", "tungo-sdk-kotlin/0.1.0")
-            if (auth == "key") {
-                val key = apiKey?.takeIf { it.isNotEmpty() }
-                    ?: throw TungoError(401, "missing_api_key", "API ключ не задан")
-                rb.header("x-api-key", key).header("Authorization", "Bearer $key")
-            }
-            if (!idemKey.isNullOrEmpty()) rb.header("Idempotency-Key", idemKey)
-            if (!sigHeader.isNullOrEmpty()) rb.header("X-Signature", sigHeader)
-            if (jsonBody != null) {
-                rb.header("Content-Type", "application/json")
-                rb.method(method, HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
-            } else {
-                rb.method(method, HttpRequest.BodyPublishers.noBody())
-            }
-            val resp = httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-            val lim = resp.headers().firstValue("x-ratelimit-limit").orElse(null)?.toLongOrNull()
-            val rem = resp.headers().firstValue("x-ratelimit-remaining").orElse(null)?.toLongOrNull()
-            val rst = resp.headers().firstValue("x-ratelimit-reset").orElse(null)?.toLongOrNull()
-            if (lim != null && rem != null && rst != null) {
-                lastRateLimit = RateLimitInfo(lim, rem, rst)
-            }
-            val status = resp.statusCode()
-            if (status in 200..299) return resp.body()
-            val retryAfter = resp.headers().firstValue("retry-after").orElse(null)?.toDoubleOrNull()
-            if (attempt + 1 < maxAttempts && status in listOf(429, 502, 503, 504)) {
-                val waitMs = retryAfter?.let { (it * 1000).toLong() } ?: min(250L * (1L shl attempt), 8000L)
-                Thread.sleep(waitMs)
-                continue
-            }
-            val reqId = resp.headers().firstValue("x-request-id").orElse(null)
-            throw TungoError(status, "api_error", resp.body(), null, reqId, retryAfter)
-        }
-        throw TungoError(0, "max_retries_exceeded", "Превышено число попыток")
-    }
-
-    private fun toJson(value: Any?): String = when (value) {
-        null -> "null"
-        is String -> "\"${value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")}\""
-        is Number, is Boolean -> value.toString()
-        is Map<*, *> -> value.entries.joinToString(",", "{", "}") { "${toJson(it.key.toString())}:${toJson(it.value)}" }
-        is Iterable<*> -> value.joinToString(",", "[", "]") { toJson(it) }
-        else -> toJson(value.toString())
-    }
-}
+/**
+ * Creates a [TungoClient].
+ *
+ *     val client = TungoClient {
+ *         apiKey = "tg_..."        // default: environment variable TUNGO_API_KEY
+ *         timeout = 30.seconds
+ *         maxRetries = 3
+ *     }
+ */
+public fun TungoClient(block: TungoClientOptions.Builder.() -> Unit = {}): TungoClient =
+    TungoClient.create(TungoClientOptions.Builder().apply(block).build())
