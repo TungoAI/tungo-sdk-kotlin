@@ -60,7 +60,11 @@ public class RequestOptions private constructor(builder: Builder) {
         /** Maximum number of retries; 0 disables retrying. */
         public var maxRetries: Int? = null
 
-        /** Idempotency key. The same key is sent with every attempt. */
+        /**
+         * Idempotency key of an operation that declares the `Idempotency-Key` header, instead of
+         * the generated one. The same key is sent with every attempt. Any other operation sends no
+         * key, not even this one, and a POST or PATCH among them is never retried.
+         */
         public var idempotencyKey: String? = null
 
         /** Idle timeout of an event stream. */

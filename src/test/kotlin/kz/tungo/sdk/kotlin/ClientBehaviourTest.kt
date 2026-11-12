@@ -557,13 +557,22 @@ class ClientBehaviourTest {
             assertEquals(2, api.server.requestCount)
             assertTrue(api.sleeps.isEmpty())
             assertNull(api.take().getHeader("Idempotency-Key"))
-            // The caller's key makes it repeatable.
+            // chat.stop declares no Idempotency-Key: the API ignores a caller's key there, so it is
+            // not sent and does not make the request repeatable.
             api.take()
             api.server.enqueue(MockResponse().setResponseCode(503))
             api.enqueueJson("""{"id":"d_1","stopped":true}""")
-            val stopped = api.client().chat.stop("d_1", requestOptions = RequestOptions { idempotencyKey = "stop-1" })
-            assertTrue(stopped.stopped)
-            assertEquals(4, api.server.requestCount)
+            assertFailsWith<ServiceUnavailableException> {
+                api.client().chat.stop(
+                    "d_1",
+                    requestOptions = RequestOptions {
+                        idempotencyKey = "stop-1"
+                        header("Idempotency-Key", "stop-2")
+                    },
+                )
+            }
+            assertEquals(3, api.server.requestCount)
+            assertNull(api.take().getHeader("Idempotency-Key"))
         }
     }
 
