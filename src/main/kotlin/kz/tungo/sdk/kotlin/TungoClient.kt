@@ -123,7 +123,8 @@ public class TungoClient internal constructor(
      * @param payload the body to send, byte for byte
      * @param secret the signing secret of the hook, when it has one
      * @param contentType media type of the payload
-     * @param eventId value of the X-Event-Id header, used by the API to drop duplicates
+     * @param eventId value of the X-Event-Id header, used by the API to drop duplicates; it is also
+     *   the Idempotency-Key unless [requestOptions] carries one
      */
     public suspend fun sendHook(
         token: String,

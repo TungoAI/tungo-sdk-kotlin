@@ -612,6 +612,8 @@ class ClientBehaviourTest {
             assertEquals("/hooks/tok%2F1", request.path)
             assertNull(request.getHeader("x-api-key"))
             assertEquals("evt_1", request.getHeader("X-Event-Id"))
+            // The API reads Idempotency-Key before X-Event-Id: the event id must be the key.
+            assertEquals("evt_1", request.getHeader("Idempotency-Key"))
             assertEquals("application/json", request.getHeader("Content-Type"))
             val sent = request.body.readByteArray()
             assertTrue(payload.toByteArray().contentEquals(sent))
@@ -625,6 +627,13 @@ class ClientBehaviourTest {
             assertNull(unsigned.getHeader("X-Signature"))
             assertNull(unsigned.getHeader("x-api-key"))
             assertEquals("application/octet-stream", unsigned.getHeader("Content-Type"))
+            assertNotNull(unsigned.getHeader("Idempotency-Key"))
+
+            api.enqueueJson(Fixtures.HOOK_ACCEPTED, 202)
+            api.client().sendHook("tok", "{}", eventId = "evt_1", requestOptions = RequestOptions { idempotencyKey = "own" })
+            val own = api.take()
+            assertEquals("own", own.getHeader("Idempotency-Key"), "a key the caller gives wins")
+            assertEquals("evt_1", own.getHeader("X-Event-Id"))
             assertFailsWith<TungoValidationException> { api.client().sendHook("tok", "{}", secret = "") }
         }
     }

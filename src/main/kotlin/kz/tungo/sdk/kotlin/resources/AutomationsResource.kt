@@ -504,6 +504,7 @@ public class AutomationsResource internal constructor(internal val engine: HttpE
                     headers = listOfNotNull(eventId?.let { "X-Event-Id" to it }, signature?.let { "X-Signature" to it }),
                     payload = body?.let { RequestPayload(it, contentType) },
                     idempotent = true,
+                    defaultIdempotencyKey = eventId,
                 ),
                 requestOptions,
                 AutomationHookAccepted.serializer(),

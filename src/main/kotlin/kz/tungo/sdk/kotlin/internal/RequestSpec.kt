@@ -26,6 +26,11 @@ internal class RequestSpec(
     val payload: RequestPayload? = null,
     /** The contract declares the Idempotency-Key header: the SDK generates a key. */
     val idempotent: Boolean = false,
+    /**
+     * The key used instead of a random one when the caller gives none: the event id of a hook
+     * event, because the API reads Idempotency-Key before X-Event-Id.
+     */
+    val defaultIdempotencyKey: String? = null,
     /** A non-streaming chat turn: the default timeout is 600 s. */
     val longRunning: Boolean = false,
 )

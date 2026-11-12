@@ -371,7 +371,8 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
             } else {
                 headers.removeAll("Authorization")
             }
-            val idempotencyKey = requestOptions.idempotencyKey ?: if (spec.idempotent) UUID.randomUUID().toString() else null
+            val idempotencyKey = requestOptions.idempotencyKey
+                ?: if (spec.idempotent) spec.defaultIdempotencyKey?.takeIf { it.isNotEmpty() } ?: UUID.randomUUID().toString() else null
             if (idempotencyKey != null) headers[IDEMPOTENCY_HEADER] = idempotencyKey
             val payload = spec.payload
             val repeatable = Retry.isRepeatable(spec.method, idempotencyKey != null)
