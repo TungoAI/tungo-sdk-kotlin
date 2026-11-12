@@ -467,17 +467,39 @@ class ConformanceVectorsTest {
     // ---- chat_stream ----
 
     @Test
+    fun chatStreamReplayThatIsNotAReplayIsADecodeError() = runBlocking {
+        val cases = Vectors.cases("chat_stream_replay").filter { it.obj("expect")["decode_error"]?.jsonPrimitive?.booleanOrNull == true }
+        assertTrue(cases.isNotEmpty())
+        for (case in cases) {
+            MockApi().use { api ->
+                val response = MockResponse().setResponseCode(case.getValue("status").jsonPrimitive.int)
+                    .setBody(Buffer().writeUtf8(case.getValue("body").toString()))
+                for ((header, value) in case.stringMap("headers")) response.setHeader(header, value)
+                api.server.enqueue(response)
+                val error = assertFailsWith<kz.tungo.sdk.kotlin.errors.TungoDecodeException>(case.caseName) {
+                    api.client().chat.streamTurn(ChatMessageRequest(message = "q"))
+                }
+                assertEquals(case.getValue("status").jsonPrimitive.int, error.status, case.caseName)
+            }
+        }
+    }
+
+    @Test
     fun chatStreamAccumulation() = runBlocking {
+        // A turn repeated with the same Idempotency-Key after it finished is answered with its
+        // stored JSON result (chat_stream_replay): the stream must yield the same turn.
+        val replays = Vectors.cases("chat_stream_replay").filter { it.obj("expect")["decode_error"] == null }
+        assertTrue(replays.size >= 3)
         val cases = Vectors.cases("chat_stream")
         assertTrue(cases.size >= 6)
-        for (case in cases) {
+        for (case in cases + replays) {
             MockApi().use { api ->
                 val client = api.client()
                 val expect = case.obj("expect")
                 val name = case.caseName
                 fun enqueue() {
                     val response = MockResponse().setResponseCode(case.getValue("status").jsonPrimitive.int)
-                        .setBody(Buffer().writeUtf8(case.str("raw")))
+                        .setBody(Buffer().writeUtf8(case["raw"]?.jsonPrimitive?.content ?: case.getValue("body").toString()))
                     for ((header, value) in case.stringMap("headers")) response.setHeader(header, value)
                     api.server.enqueue(response)
                 }

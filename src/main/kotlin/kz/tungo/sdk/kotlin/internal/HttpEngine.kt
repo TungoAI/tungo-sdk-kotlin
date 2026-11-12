@@ -26,8 +26,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kz.tungo.sdk.kotlin.ApiResponse
 import kz.tungo.sdk.kotlin.RequestOptions
 import kz.tungo.sdk.kotlin.ResponseHeaders
@@ -54,6 +58,7 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.BufferedSink
 
 /** A fully read response. */
@@ -206,7 +211,23 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
                 // Before the headers arrive either limit may have expired: connecting, or waiting for the first byte.
                 throw mapIo(e, "The stream did not open in time (connect timeout ${options.connectTimeout}, idle timeout $idle)")
             }
-            if (response.code in 200..299) {
+            if (response.code in 200..299 && isReplayedJson(response)) {
+                // A chat turn repeated with the same Idempotency-Key after it finished: the server
+                // answers the stored ChatTurnResult instead of a stream. The caller gets its events.
+                val bytes = try {
+                    withContext(Dispatchers.IO) { response.use { it.body?.bytes() ?: EMPTY } }
+                } catch (e: IOException) {
+                    currentCoroutineContext().ensureActive()
+                    throw mapIo(e, idle)
+                }
+                val replay = replayAsEventStream(response, bytes) ?: throw TungoDecodeException(
+                    "The replayed response is not a chat turn result (status ${response.code})",
+                    null, response.code, toHeaders(response.headers), bytes.decodeToString(),
+                )
+                open = replay
+                openCall = call
+                Attempt.Done(RawResponse(replay.code, toHeaders(replay.headers), EMPTY))
+            } else if (response.code in 200..299) {
                 if (!isEventStream(response.header("Content-Type"))) {
                     // A success reply that is not an event stream (JSON, the HTML page of a proxy,
                     // no type at all) must not look like a stream that ended without events.
@@ -465,6 +486,61 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
         private const val DEFAULT_EVENT: String = "message"
 
         /** True for the media type text/event-stream, whatever its parameters and letter case. */
+        /** Whether a stream call was answered with a stored result replayed by Idempotency-Key. */
+        private fun isReplayedJson(response: Response): Boolean =
+            response.header("Content-Type")?.substringBefore(';')?.trim().equals("application/json", ignoreCase = true) &&
+                response.header("Idempotent-Replayed")?.trim().equals("true", ignoreCase = true)
+
+        /**
+         * Turns a replayed ChatTurnResult into the event stream of the turn it stands for: text
+         * (the answer), proposal, question, citation, error and choice events, then done. The
+         * dialog id and the turn number, which a replay carries only in the body, become the
+         * X-Dialog-Id and X-Turn-No headers when they are missing. Returns null when the body is
+         * not a chat turn result.
+         */
+        private fun replayAsEventStream(response: Response, body: ByteArray): Response? {
+            val result = try {
+                TungoJson.decoder.parseToJsonElement(body.decodeToString())
+            } catch (e: SerializationException) {
+                return null
+            } catch (e: IllegalArgumentException) {
+                return null
+            } as? JsonObject ?: return null
+            fun string(element: JsonElement?): String? = (element as? JsonPrimitive)?.takeIf { it.isString }?.content
+            val dialogId = string(result["dialog_id"]) ?: return null
+            val builder = response.newBuilder()
+            if (response.header("X-Dialog-Id").isNullOrEmpty()) builder.header("X-Dialog-Id", dialogId)
+            val turnNo = (result["turn_no"] as? JsonPrimitive)?.takeIf { !it.isString }?.longOrNull
+            if (turnNo != null && response.header("X-Turn-No").isNullOrEmpty()) builder.header("X-Turn-No", turnNo.toString())
+
+            val out = StringBuilder()
+            fun emit(type: String, fields: Map<String, JsonElement>) {
+                val event = JsonObject(fields + ("type" to JsonPrimitive(type)))
+                out.append("event: ").append(type).append("\ndata: ").append(event.toString()).append("\n\n")
+            }
+            fun entries(key: String): List<JsonObject> = (result[key] as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
+            val answer = string(result["answer"]) ?: ""
+            if (answer.isNotEmpty()) emit("text", mapOf("delta" to JsonPrimitive(answer)))
+            for (proposal in entries("proposals")) emit("proposal", proposal - "id" + ("proposal_id" to (proposal["id"] ?: JsonNull)))
+            for (question in entries("questions")) emit("question", question)
+            for (citation in entries("citations")) emit("citation", citation)
+            val requestId = response.header("x-request-id")?.takeIf { it.isNotEmpty() }
+            for (error in entries("errors")) emit("error", mapOf("error" to error, "request_id" to JsonPrimitive(requestId)))
+            val done = LinkedHashMap<String, JsonElement>()
+            done["answer"] = JsonPrimitive(answer)
+            string(result["stop_reason"])?.let { done["stop_reason"] = JsonPrimitive(it) }
+            (result["usage"] as? JsonObject)?.let { usage ->
+                done["usage"] = JsonObject(usage - "cost_tiyn")
+                usage["cost_tiyn"]?.let { done["cost_tiyn"] = it }
+            }
+            (result["pending_question"] as? JsonObject)?.let { pending ->
+                emit("choice", pending)
+                pending["choice_id"]?.let { done["choice_id"] = it }
+            }
+            emit("done", done)
+            return builder.body(out.toString().toResponseBody(null)).build()
+        }
+
         private fun isEventStream(contentType: String?): Boolean =
             contentType?.substringBefore(';')?.trim().equals(ACCEPT_SSE, ignoreCase = true)
         private val EMPTY = ByteArray(0)
