@@ -31,9 +31,14 @@ public object TungoMoney {
      * @throws TungoValidationException when the result does not fit 64 bits
      */
     public fun toTiyn(amount: BigDecimal): Long {
-        val tiyn = amount.multiply(hundred).setScale(0, RoundingMode.HALF_UP)
+        // Bound the exponent before any rescaling: setScale(0) of BigDecimal("1E-1000000000") would
+        // compute 10^1000000000. precision - scale is the number of digits before the point: below
+        // 10^-3 an amount rounds to zero tiyn, at 10^19 tenge and above it cannot fit into 64 bits.
+        val integerDigits = amount.precision().toLong() - amount.scale()
+        if (amount.signum() == 0 || integerDigits < -2) return 0
+        if (integerDigits > 19) throw TungoValidationException("The amount does not fit into 64-bit tiyn")
         try {
-            return tiyn.longValueExact()
+            return amount.multiply(hundred).setScale(0, RoundingMode.HALF_UP).longValueExact()
         } catch (e: ArithmeticException) {
             throw TungoValidationException("The amount does not fit into 64-bit tiyn", e)
         }

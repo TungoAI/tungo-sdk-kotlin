@@ -35,6 +35,7 @@ import kz.tungo.sdk.kotlin.errors.TungoTimeoutException
 import kz.tungo.sdk.kotlin.errors.TungoValidationException
 import kz.tungo.sdk.kotlin.errors.WebhookVerificationException
 import kz.tungo.sdk.kotlin.internal.TungoJson
+import kz.tungo.sdk.kotlin.models.ApproveRequest
 import kz.tungo.sdk.kotlin.models.ChatMessageRequest
 import kz.tungo.sdk.kotlin.models.ChatTokenCountRequest
 import kz.tungo.sdk.kotlin.models.Company
@@ -65,7 +66,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun keyAndUserAgentAreSentToAuthenticatedOperations() = runBlocking {
+    fun keyAndUserAgentAreSentToAuthenticatedOperations() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.COMPANY)
             api.client().companies.get()
@@ -82,7 +83,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aMissingKeyFailsBeforeAnyRequest() = runBlocking {
+    fun aMissingKeyFailsBeforeAnyRequest() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client { apiKey = null }
             val error = assertFailsWith<TungoConfigException> { client.companies.list() }
@@ -92,7 +93,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun publicOperationsNeedNoKeyAndNeverSendOne() = runBlocking {
+    fun publicOperationsNeedNoKeyAndNeverSendOne() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(404).setBody(Fixtures.error("not_found_error", "нет")))
             api.server.enqueue(MockResponse().setResponseCode(404).setBody(Fixtures.error("not_found_error", "нет")))
@@ -130,7 +131,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun scopeIdsComeFromTheCallThenFromTheClient() = runBlocking {
+    fun scopeIdsComeFromTheCallThenFromTheClient() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.COMPANY)
             api.client().companies.get(companyId = "co/other")
@@ -143,7 +144,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun defaultAndPerRequestHeadersAreSent() = runBlocking {
+    fun defaultAndPerRequestHeadersAreSent() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.COMPANY)
             val client = api.client { header("X-Trace", "client"); header("X-Tenant", "t1") }
@@ -155,7 +156,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun withOptionsDerivesAClientOnTheSamePool() = runBlocking {
+    fun withOptionsDerivesAClientOnTheSamePool() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.COMPANY)
             val client = api.client()
@@ -172,7 +173,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aCallerSuppliedHttpClientIsUsedAndLeftOpen() = runBlocking {
+    fun aCallerSuppliedHttpClientIsUsedAndLeftOpen() = runBlocking<Unit> {
         MockApi().use { api ->
             var seen = 0
             val http = OkHttpClient.Builder().addInterceptor(Interceptor { chain -> seen++; chain.proceed(chain.request()) }).build()
@@ -190,7 +191,7 @@ class ClientBehaviourTest {
     // ---- decoding ----
 
     @Test
-    fun responsesAreDecodedIntoTypedModelsAndTolerateTheFuture() = runBlocking {
+    fun responsesAreDecodedIntoTypedModelsAndTolerateTheFuture() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.COMPANY)
             val company: Company = api.client().companies.get()
@@ -206,7 +207,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun int64IsDecodedWithoutLoss() = runBlocking {
+    fun int64IsDecodedWithoutLoss() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.TOKEN_COUNT)
             val count = api.client().chat.countTokens(ChatTokenCountRequest(message = "q"))
@@ -225,7 +226,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aBodyThatCannotBeDecodedIsATypedErrorAndIsNotRetried() = runBlocking {
+    fun aBodyThatCannotBeDecodedIsATypedErrorAndIsNotRetried() = runBlocking<Unit> {
         MockApi().use { api ->
             for (body in listOf("<html>proxy</html>", "", """{"id":1}""", "[]")) {
                 api.server.enqueue(MockResponse().setResponseCode(200).setHeader("x-request-id", "req_bad").setBody(body))
@@ -241,7 +242,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun rawResponsesExposeStatusHeadersAndRateLimit() = runBlocking {
+    fun rawResponsesExposeStatusHeadersAndRateLimit() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(
                 Fixtures.COMPANY, 200,
@@ -261,7 +262,7 @@ class ClientBehaviourTest {
     // ---- request bodies ----
 
     @Test
-    fun absentNullAndEmptyAreDifferentOnTheWire() = runBlocking {
+    fun absentNullAndEmptyAreDifferentOnTheWire() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             val bodies = ArrayList<String>()
@@ -300,7 +301,7 @@ class ClientBehaviourTest {
     // ---- errors ----
 
     @Test
-    fun errorsAreTypedAndCarryTheDetails() = runBlocking {
+    fun errorsAreTypedAndCarryTheDetails() = runBlocking<Unit> {
         MockApi().use { api ->
             val body = """{"error":{"type":"invalid_request_error","code":"validation_failed","message":"Проверьте поля",""" +
                 """"fields":[{"path":"url","code":"required","message":"нужен адрес"}],"resets_at":"2026-12-01T00:00:00Z"},"request_id":"req_body"}"""
@@ -325,7 +326,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun nonJsonErrorBodiesKeepTheStatusAndTheBody() = runBlocking {
+    fun nonJsonErrorBodiesKeepTheStatusAndTheBody() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client { maxRetries = 0 }
             api.server.enqueue(MockResponse().setResponseCode(502).setHeader("x-request-id", "req_edge").setBody("<html>Bad Gateway</html>"))
@@ -343,7 +344,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun connectionFailuresAreWrapped() = runBlocking {
+    fun connectionFailuresAreWrapped() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
             val error = assertFailsWith<TungoConnectionException> { api.client { maxRetries = 0 }.companies.get() }
@@ -354,7 +355,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aRefusedConnectionIsAConnectionError() = runBlocking {
+    fun aRefusedConnectionIsAConnectionError() = runBlocking<Unit> {
         val port = java.net.ServerSocket(0).use { it.localPort }
         TungoClient { apiKey = MockApi.KEY; baseUrl = "http://127.0.0.1:$port"; maxRetries = 0 }.use { client ->
             assertFailsWith<TungoConnectionException> { client.companies.list() }
@@ -362,7 +363,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aRedirectIsNeverFollowedAndTheKeyStaysHome() = runBlocking {
+    fun aRedirectIsNeverFollowedAndTheKeyStaysHome() = runBlocking<Unit> {
         MockApi().use { other ->
             MockApi().use { api ->
                 val location = other.server.url("/v1/elsewhere").toString()
@@ -387,7 +388,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun theHookTokenNeverAppearsInAnError() = runBlocking {
+    fun theHookTokenNeverAppearsInAnError() = runBlocking<Unit> {
         val port = java.net.ServerSocket(0).use { it.localPort }
         val token = "SECRET_HOOK_TOKEN_123"
         TungoClient { apiKey = MockApi.KEY; baseUrl = "http://127.0.0.1:$port"; maxRetries = 0 }.use { client ->
@@ -405,7 +406,7 @@ class ClientBehaviourTest {
     // ---- timeouts and cancellation ----
 
     @Test
-    fun theTimeoutCoversTheWholeAttemptIncludingTheBody() = runBlocking {
+    fun theTimeoutCoversTheWholeAttemptIncludingTheBody() = runBlocking<Unit> {
         MockApi().use { api ->
             // Headers arrive at once, the body trickles: only a total timeout catches this.
             api.server.enqueue(MockResponse().setBody(Fixtures.COMPANY).throttleBody(16, 200, TimeUnit.MILLISECONDS))
@@ -420,7 +421,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aTimeoutIsRetriedForSafeMethods() = runBlocking {
+    fun aTimeoutIsRetriedForSafeMethods() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
             api.enqueueJson(Fixtures.COMPANY)
@@ -432,7 +433,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun cancellingTheCoroutineCancelsTheCallAndIsNotWrapped() = runBlocking {
+    fun cancellingTheCoroutineCancelsTheCallAndIsNotWrapped() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
             val client = api.client()
@@ -456,7 +457,7 @@ class ClientBehaviourTest {
     // ---- retries and idempotency ----
 
     @Test
-    fun getIsRetriedWithBackoffAndThenSucceeds() = runBlocking {
+    fun getIsRetriedWithBackoffAndThenSucceeds() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(500).setBody(Fixtures.error("api_error", "сбой")))
             api.server.enqueue(MockResponse().setResponseCode(502).setBody("bad gateway"))
@@ -468,7 +469,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun retriesStopAtTheLimitAndSurfaceTheLastError() = runBlocking {
+    fun retriesStopAtTheLimitAndSurfaceTheLastError() = runBlocking<Unit> {
         MockApi().use { api ->
             repeat(4) { api.server.enqueue(MockResponse().setResponseCode(503).setBody(Fixtures.error("unavailable_error", "позже"))) }
             assertFailsWith<ServiceUnavailableException> { api.client { maxRetries = 3 }.companies.get() }
@@ -483,7 +484,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aRequestTimeoutStatusFollowsTheRetryLimitOfTheSdk() = runBlocking {
+    fun aRequestTimeoutStatusFollowsTheRetryLimitOfTheSdk() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(408))
             val error = assertFailsWith<TungoApiException> { api.client { maxRetries = 0 }.companies.get() }
@@ -499,7 +500,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun clientErrorsAreNotRetried() = runBlocking {
+    fun clientErrorsAreNotRetried() = runBlocking<Unit> {
         MockApi().use { api ->
             for (status in listOf(400, 401, 403, 404, 409, 410, 422)) {
                 api.server.enqueue(MockResponse().setResponseCode(status))
@@ -511,7 +512,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aRateLimitIsRetriedAfterTheDelayTheServerAsksFor() = runBlocking {
+    fun aRateLimitIsRetriedAfterTheDelayTheServerAsksFor() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(429).setHeader("Retry-After", "7").setBody(Fixtures.error("limit_error", "часто")))
             api.server.enqueue(MockResponse().setResponseCode(429).setHeader("retry-after-ms", "1500").setHeader("Retry-After", "30"))
@@ -527,7 +528,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun idempotentPostsSendOneKeyAndRepeatItOnEveryAttempt() = runBlocking {
+    fun idempotentPostsSendOneKeyAndRepeatItOnEveryAttempt() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(503))
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
@@ -548,7 +549,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aPostWithoutAnIdempotencyKeyIsNeverRetried() = runBlocking {
+    fun aPostWithoutAnIdempotencyKeyIsNeverRetried() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(503).setHeader("Retry-After", "1"))
             assertFailsWith<ServiceUnavailableException> { api.client().chat.stop("d_1") }
@@ -577,7 +578,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun aBrokenPooledConnectionIsNotSilentlyResentForAPostWithoutAKey() = runBlocking {
+    fun aBrokenPooledConnectionIsNotSilentlyResentForAPostWithoutAKey() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             api.enqueueJson("""{"id":"d_1","stopped":true}""")
@@ -595,7 +596,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun theNonStreamingChatCallAsksForJson() = runBlocking {
+    fun theNonStreamingChatCallAsksForJson() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.TURN)
             val turn = api.client().chat.create(ChatMessageRequest(message = "q", stream = true))
@@ -609,7 +610,7 @@ class ClientBehaviourTest {
     // ---- hooks and webhooks ----
 
     @Test
-    fun sendHookSignsTheExactBytesAndSendsNoKey() = runBlocking {
+    fun sendHookSignsTheExactBytesAndSendsNoKey() = runBlocking<Unit> {
         MockApi().use { api ->
             val payload = "{\"сумма\": 100.50,  \"n\":1}\n"
             api.enqueueJson(Fixtures.HOOK_ACCEPTED, 202)
@@ -644,6 +645,49 @@ class ClientBehaviourTest {
             assertEquals("own", own.getHeader("Idempotency-Key"), "a key the caller gives wins")
             assertEquals("evt_1", own.getHeader("X-Event-Id"))
             assertFailsWith<TungoValidationException> { api.client().sendHook("tok", "{}", secret = "") }
+        }
+    }
+
+    @Test
+    fun theIdempotencyKeyOfAnApprovalBodyIsTheHeader() = runBlocking<Unit> {
+        // The API prefers the header over the documented body field: a generated header would make
+        // a repeat of the same click a new approval.
+        MockApi().use { api ->
+            val decision = "{\"message\":\"ok\",\"ok\":true,\"repeated\":false}"
+            repeat(4) { api.enqueueJson(decision) }
+            val client = api.client()
+            client.proposals.approve("P-1", ApproveRequest(idempotencyKey = " click-7 "), companyId = "co_1")
+            assertEquals("click-7", api.take().getHeader("Idempotency-Key"))
+            client.proposals.approve("P-1", ApproveRequest(idempotencyKey = "click-7"), companyId = "co_1")
+            assertEquals("click-7", api.take().getHeader("Idempotency-Key"))
+            client.proposals.approve(
+                "P-1", ApproveRequest(idempotencyKey = "click-7"), companyId = "co_1",
+                requestOptions = RequestOptions { idempotencyKey = "own" },
+            )
+            assertEquals("own", api.take().getHeader("Idempotency-Key"))
+            client.proposals.approve("P-1", ApproveRequest(), companyId = "co_1")
+            assertEquals(36, assertNotNull(api.take().getHeader("Idempotency-Key")).length)
+        }
+    }
+
+    @Test
+    fun aHookWithItsOwnSignatureHeaderIsSignedInThatHeader() = runBlocking<Unit> {
+        MockApi().use { api ->
+            api.enqueueJson(Fixtures.HOOK_ACCEPTED, 202)
+            api.client().sendHook("tok", "{\"n\":1}", secret = "s3cret", signatureHeader = "x-shop-signature")
+            val request = api.take()
+            val sent = request.body.readByteArray()
+            assertNull(request.getHeader("X-Signature"), "the hook reads only its own signature_header")
+            assertTrue(TungoWebhooks.verifyHookSignature(sent, assertNotNull(request.getHeader("X-Shop-Signature")), "s3cret"))
+            assertFailsWith<TungoValidationException> {
+                api.client().sendHook("tok", "{}", secret = "s3cret", signatureHeader = "bad header")
+            }
+            assertFailsWith<TungoValidationException> {
+                api.client().sendHook(
+                    "tok", "{}", secret = "s3cret", signatureHeader = "x-shop-signature",
+                    requestOptions = RequestOptions { header("X-Shop-Signature", "sha256=00") },
+                )
+            }
         }
     }
 
@@ -706,7 +750,7 @@ class ClientBehaviourTest {
     // ---- waiting helpers ----
 
     @Test
-    fun waitForRunPollsUntilAFinalState() = runBlocking {
+    fun waitForRunPollsUntilAFinalState() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.run("queued"))
             api.enqueueJson(Fixtures.run("running"))
@@ -720,7 +764,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun waitForRunGivesUpAtTheDeadlineWithALocalTimeout() = runBlocking {
+    fun waitForRunGivesUpAtTheDeadlineWithALocalTimeout() = runBlocking<Unit> {
         MockApi().use { api ->
             repeat(20) { api.enqueueJson(Fixtures.run("running")) }
             val error = assertFailsWith<TungoTimeoutException> { api.client().automations.waitForRun("run_1", timeout = 10.seconds) }
@@ -729,7 +773,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun runScenarioAndWaitStartsTheRunAndWaits() = runBlocking {
+    fun runScenarioAndWaitStartsTheRunAndWaits() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.run("queued"), 202)
             api.enqueueJson(Fixtures.run("error"))
@@ -743,7 +787,7 @@ class ClientBehaviourTest {
     }
 
     @Test
-    fun waitForBatchPollsWhileTheJobRuns() = runBlocking {
+    fun waitForBatchPollsWhileTheJobRuns() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.batch(true))
             api.enqueueJson(Fixtures.batch(false))

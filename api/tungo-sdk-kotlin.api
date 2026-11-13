@@ -132,9 +132,13 @@ public final class kz/tungo/sdk/kotlin/TungoClient : java/io/Closeable {
 	public final fun getProposals ()Lkz/tungo/sdk/kotlin/resources/ProposalsResource;
 	public final fun getWebhooks ()Lkz/tungo/sdk/kotlin/resources/WebhooksResource;
 	public final fun getWorkspaces ()Lkz/tungo/sdk/kotlin/resources/WorkspacesResource;
+	public final fun sendHook (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun sendHook (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun sendHook (Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun sendHook (Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendHook$default (Lkz/tungo/sdk/kotlin/TungoClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun sendHook$default (Lkz/tungo/sdk/kotlin/TungoClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun sendHook$default (Lkz/tungo/sdk/kotlin/TungoClient;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun sendHook$default (Lkz/tungo/sdk/kotlin/TungoClient;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkz/tungo/sdk/kotlin/RequestOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
 	public final fun verifyWebhook-Wn2Vu4Y (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;J)Lkz/tungo/sdk/kotlin/models/WebhookEvent;

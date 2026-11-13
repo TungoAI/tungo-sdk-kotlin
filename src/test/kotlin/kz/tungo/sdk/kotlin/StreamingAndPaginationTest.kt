@@ -39,7 +39,7 @@ class StreamingAndPaginationTest {
     // ---- pagination ----
 
     @Test
-    fun pagesAreTypedAndNextKeepsTheFilters() = runBlocking {
+    fun pagesAreTypedAndNextKeepsTheFilters() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("c 2/+", "d1", "d2"), 200, "x-request-id" to "req_p1")
             api.enqueueJson(Fixtures.dialogs(null, "d3"))
@@ -60,7 +60,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun theFlowWalksEveryPageLazily() = runBlocking {
+    fun theFlowWalksEveryPageLazily() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("c2", "d1", "d2"))
             api.enqueueJson(Fixtures.dialogs("c3", "d3"))
@@ -76,7 +76,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun stoppingEarlyRequestsNoFurtherPages() = runBlocking {
+    fun stoppingEarlyRequestsNoFurtherPages() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("c2", "d1", "d2"))
             api.enqueueJson(Fixtures.dialogs("c3", "d3"))
@@ -86,7 +86,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun aRepeatedCursorStopsTheWalkWithATypedError() = runBlocking {
+    fun aRepeatedCursorStopsTheWalkWithATypedError() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("same", "d1"))
             api.enqueueJson(Fixtures.dialogs("same", "d2"))
@@ -98,7 +98,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun anErrorOnALaterPageIsTyped() = runBlocking {
+    fun anErrorOnALaterPageIsTyped() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("c2", "d1"))
             api.server.enqueue(MockResponse().setResponseCode(403).setBody(Fixtures.error("permission_error", "нельзя", "missing_permission")))
@@ -112,7 +112,7 @@ class StreamingAndPaginationTest {
     // ---- streaming ----
 
     @Test
-    fun aStreamYieldsTypedEventsAndSkipsKeepAlives() = runBlocking {
+    fun aStreamYieldsTypedEventsAndSkipsKeepAlives() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueSse(Fixtures.SSE_TWO_TEXTS, "X-Dialog-Id" to "d_1", "X-Turn-No" to "4", "x-request-id" to "req_s")
             val events = api.client().chat.createStream(ChatMessageRequest(message = "q")).toList()
@@ -130,7 +130,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun theRawStreamExposesHeadersAndAccumulates() = runBlocking {
+    fun theRawStreamExposesHeadersAndAccumulates() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueSse(Fixtures.SSE_TWO_TEXTS, "X-Dialog-Id" to "d_1", "X-Turn-No" to "4", "x-request-id" to "req_s")
             val seen = ArrayList<String>()
@@ -152,7 +152,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun everyStreamingOperationSpeaksSse() = runBlocking {
+    fun everyStreamingOperationSpeaksSse() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             repeat(2) { api.enqueueSse(Fixtures.SSE_TWO_TEXTS) }
@@ -186,7 +186,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun aStreamThatFailsToOpenRaisesTheTypedError() = runBlocking {
+    fun aStreamThatFailsToOpenRaisesTheTypedError() = runBlocking<Unit> {
         MockApi().use { api ->
             val body = Fixtures.error("limit_error", "Лимит исчерпан", "plan_limit")
             api.enqueueJson(body, 429, "Retry-After" to "3600", "x-request-id" to "req_limit")
@@ -201,7 +201,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun openingAStreamIsRetriedLikeAnyRequest() = runBlocking {
+    fun openingAStreamIsRetriedLikeAnyRequest() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setResponseCode(503))
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
@@ -218,7 +218,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun anErrorEventBecomesATypedExceptionInTheHelper() = runBlocking {
+    fun anErrorEventBecomesATypedExceptionInTheHelper() = runBlocking<Unit> {
         MockApi().use { api ->
             val raw = "data: {\"type\":\"text\",\"delta\":\"Начало\"}\n\n" +
                 "data: {\"type\":\"error\",\"error\":{\"type\":\"limit_error\",\"code\":\"budget_exceeded\",\"message\":\"Бюджет\",\"resets_at\":\"2026-12-01\"}," +
@@ -234,7 +234,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun eventsArriveOneByOneWhileTheStreamIsOpen() = runBlocking {
+    fun eventsArriveOneByOneWhileTheStreamIsOpen() = runBlocking<Unit> {
         val first = "data: {\"type\":\"text\",\"delta\":\"раз\"}\n\n"
         val rest = "data: {\"type\":\"text\",\"delta\":\"два\"}\n\ndata: {\"type\":\"done\"}\n\n"
         SseSocketServer(first, rest).use { server ->
@@ -253,7 +253,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun leavingAStreamEarlyClosesTheConnection() = runBlocking {
+    fun leavingAStreamEarlyClosesTheConnection() = runBlocking<Unit> {
         val first = "data: {\"type\":\"text\",\"delta\":\"раз\"}\n\n"
         SseSocketServer(first, "data: {\"type\":\"done\"}\n\n").use { server ->
             TungoClient { apiKey = MockApi.KEY; baseUrl = server.baseUrl; companyId = "co_1" }.use { client ->
@@ -266,7 +266,7 @@ class StreamingAndPaginationTest {
     }
 
     @Test
-    fun aSilentStreamFailsWithTheIdleTimeout() = runBlocking {
+    fun aSilentStreamFailsWithTheIdleTimeout() = runBlocking<Unit> {
         val first = "data: {\"type\":\"text\",\"delta\":\"раз\"}\n\n"
         SseSocketServer(first, "").use { server ->
             TungoClient { apiKey = MockApi.KEY; baseUrl = server.baseUrl; companyId = "co_1"; streamIdleTimeout = 300.milliseconds }.use { client ->

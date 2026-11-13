@@ -138,6 +138,23 @@ class ConformanceVectorsTest {
     }
 
     @Test
+    fun moneyToTiynBoundsAHugeExponentBeforeRescaling() {
+        // A BigDecimal parsed from user text may carry any exponent: setScale must never see it.
+        val started = System.nanoTime()
+        assertEquals(0, TungoMoney.toTiyn(BigDecimal("1E-2000000000")))
+        assertEquals(0, TungoMoney.toTiyn(BigDecimal("-1E-10000000")))
+        assertEquals(0, TungoMoney.toTiyn(BigDecimal("0E-2000000000")))
+        assertEquals(0, TungoMoney.toTiyn(BigDecimal("9.99E-4")))
+        assertEquals(1, TungoMoney.toTiyn(BigDecimal("5E-3")))
+        assertEquals(-1, TungoMoney.toTiyn(BigDecimal("-5E-3")))
+        assertEquals(10050, TungoMoney.toTiyn(BigDecimal("1.005E2")))
+        assertFailsWith<TungoValidationException> { TungoMoney.toTiyn(BigDecimal("1E+999999999")) }
+        assertFailsWith<TungoValidationException> { TungoMoney.toTiyn(BigDecimal("1E+1000000")) }
+        assertFailsWith<TungoValidationException> { TungoMoney.toTiyn(BigDecimal("-1E19")) }
+        assertTrue(System.nanoTime() - started < 2_000_000_000L, "the conversion must stay cheap")
+    }
+
+    @Test
     fun moneyToTiynFromDouble() {
         for (case in Vectors.cases("money", "to_tiyn_float")) {
             val input = when (case.strOrNull("special")) {
@@ -240,7 +257,7 @@ class ConformanceVectorsTest {
     }
 
     @Test
-    fun errorsRaisedByRealCalls() = runBlocking {
+    fun errorsRaisedByRealCalls() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client { maxRetries = 0 }
             for (case in Vectors.cases("errors", "cases")) {
@@ -295,7 +312,7 @@ class ConformanceVectorsTest {
     }
 
     @Test
-    fun retryAfterDrivesRealRetries() = runBlocking {
+    fun retryAfterDrivesRealRetries() = runBlocking<Unit> {
         for (case in Vectors.cases("retry_after", "cases")) {
             MockApi().use { api ->
                 val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
@@ -375,7 +392,7 @@ class ConformanceVectorsTest {
     }
 
     @Test
-    fun pathSegmentsOnTheWire() = runBlocking {
+    fun pathSegmentsOnTheWire() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             for (case in Vectors.cases("path_segment")) {
@@ -467,7 +484,7 @@ class ConformanceVectorsTest {
     // ---- chat_stream ----
 
     @Test
-    fun chatStreamReplayThatIsNotAReplayIsADecodeError() = runBlocking {
+    fun chatStreamReplayThatIsNotAReplayIsADecodeError() = runBlocking<Unit> {
         val cases = Vectors.cases("chat_stream_replay").filter { it.obj("expect")["decode_error"]?.jsonPrimitive?.booleanOrNull == true }
         assertTrue(cases.isNotEmpty())
         for (case in cases) {
@@ -485,7 +502,7 @@ class ConformanceVectorsTest {
     }
 
     @Test
-    fun chatStreamAccumulation() = runBlocking {
+    fun chatStreamAccumulation() = runBlocking<Unit> {
         // A turn repeated with the same Idempotency-Key after it finished is answered with its
         // stored JSON result (chat_stream_replay): the stream must yield the same turn.
         val replays = Vectors.cases("chat_stream_replay").filter { it.obj("expect")["decode_error"] == null }

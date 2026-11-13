@@ -117,7 +117,8 @@ public class TungoClient internal constructor(
 
     /**
      * Sends an event to an incoming hook (POST /hooks/{token}). The API key is never sent. When a
-     * secret is given, the exact bytes of the payload are signed in the X-Signature header.
+     * secret is given, the exact bytes of the payload are signed in the X-Signature header; for a
+     * hook created with its own `signature_header`, use the overload that takes `signatureHeader`.
      *
      * @param token the hook token
      * @param payload the body to send, byte for byte
@@ -148,6 +149,51 @@ public class TungoClient internal constructor(
         eventId: String? = null,
         requestOptions: RequestOptions = RequestOptions.Default,
     ): AutomationHookAccepted = sendHook(token, payload.toByteArray(Charsets.UTF_8), secret, contentType, eventId, requestOptions)
+
+    /**
+     * Variant of [sendHook] for a hook created with its own `signature_header`: the signature of
+     * the exact bytes sent travels in [signatureHeader] instead of X-Signature, the only header such
+     * a hook reads it from.
+     *
+     * @param signatureHeader the hook's `signature_header`: 1 to 64 Latin letters, digits or hyphens
+     */
+    public suspend fun sendHook(
+        token: String,
+        payload: ByteArray,
+        secret: String?,
+        signatureHeader: String,
+        contentType: String = "application/json",
+        eventId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): AutomationHookAccepted {
+        if (!HOOK_SIGNATURE_HEADER.matches(signatureHeader)) {
+            throw TungoValidationException("The signature header must be 1 to 64 Latin letters, digits or hyphens, like the hook's signature_header")
+        }
+        if (signatureHeader.equals(DEFAULT_HOOK_SIGNATURE_HEADER, ignoreCase = true)) {
+            return sendHook(token, payload, secret, contentType, eventId, requestOptions)
+        }
+        if (secret != null && secret.isEmpty()) throw TungoValidationException("The hook secret must not be empty")
+        var options = requestOptions
+        if (secret != null) {
+            if (requestOptions.headers.keys.any { it.equals(signatureHeader, ignoreCase = true) }) {
+                throw TungoValidationException("Pass either secret or the $signatureHeader header, not both")
+            }
+            options = requestOptions.withHeader(signatureHeader, TungoWebhooks.hookSignatureHeader(payload, secret))
+        }
+        return automations.postHook(token = token, body = payload, contentType = contentType, eventId = eventId, signature = null, requestOptions = options)
+    }
+
+    /** Variant of [sendHook] with [signatureHeader] for a text payload, sent as UTF-8. */
+    public suspend fun sendHook(
+        token: String,
+        payload: String,
+        secret: String?,
+        signatureHeader: String,
+        contentType: String = "application/json",
+        eventId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): AutomationHookAccepted =
+        sendHook(token, payload.toByteArray(Charsets.UTF_8), secret, signatureHeader, contentType, eventId, requestOptions)
 
     /**
      * Releases the threads and connections of this client. A client built around a caller-supplied
@@ -191,3 +237,9 @@ public class TungoClient internal constructor(
  */
 public fun TungoClient(block: TungoClientOptions.Builder.() -> Unit = {}): TungoClient =
     TungoClient.create(TungoClientOptions.Builder().apply(block).build())
+
+/** The header a hook reads its signature from unless it was created with its own. */
+private const val DEFAULT_HOOK_SIGNATURE_HEADER = "X-Signature"
+
+/** The names the API accepts as the `signature_header` of a hook. */
+private val HOOK_SIGNATURE_HEADER = Regex("[A-Za-z0-9-]{1,64}")

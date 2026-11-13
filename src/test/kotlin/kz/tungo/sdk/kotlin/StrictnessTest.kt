@@ -61,7 +61,7 @@ class StrictnessTest {
     // ---- a chat stream that ends without "done" ----
 
     @Test
-    fun aChatStreamThatEndsWithoutDoneIsNotAFinishedTurn() = runBlocking {
+    fun aChatStreamThatEndsWithoutDoneIsNotAFinishedTurn() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             api.enqueueSse(text, "x-request-id" to "req_cut")
@@ -89,7 +89,7 @@ class StrictnessTest {
     // ---- a success reply that is not an event stream ----
 
     @Test
-    fun aSuccessReplyThatIsNotAnEventStreamIsADecodeError() = runBlocking {
+    fun aSuccessReplyThatIsNotAnEventStreamIsADecodeError() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             api.server.enqueue(sse("""{"answer":"not a stream"}""", "application/json").setHeader("x-request-id", "req_json"))
@@ -116,7 +116,7 @@ class StrictnessTest {
     // ---- Retry-After that asks for no delay ----
 
     @Test
-    fun aZeroOrPastRetryAfterMeansTheNormalBackoff() = runBlocking {
+    fun aZeroOrPastRetryAfterMeansTheNormalBackoff() = runBlocking<Unit> {
         val headers = listOf(
             "Retry-After" to "0",
             "Retry-After" to "Mon, 09 Nov 2020 14:59:00 GMT",
@@ -142,7 +142,7 @@ class StrictnessTest {
     // ---- a cycle of cursors ----
 
     @Test
-    fun aCursorCycleStopsThePagination() = runBlocking {
+    fun aCursorCycleStopsThePagination() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueJson(Fixtures.dialogs("A", "d1"))
             api.enqueueJson(Fixtures.dialogs("B", "d2"))
@@ -158,7 +158,7 @@ class StrictnessTest {
     // ---- error events of streams ----
 
     @Test
-    fun anErrorEventOfTheFeedIsTheTypedApiError() = runBlocking {
+    fun anErrorEventOfTheFeedIsTheTypedApiError() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             api.enqueueSse(
@@ -192,7 +192,7 @@ class StrictnessTest {
     }
 
     @Test
-    fun anyErrorEventOfAChatTurnMakesTheHelperThrow() = runBlocking {
+    fun anyErrorEventOfAChatTurnMakesTheHelperThrow() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             // The contract shape.
@@ -230,7 +230,7 @@ class StrictnessTest {
     // ---- a flow collected twice ----
 
     @Test
-    fun collectingAStreamTwiceRepeatsTheSameIdempotencyKey() = runBlocking {
+    fun collectingAStreamTwiceRepeatsTheSameIdempotencyKey() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             repeat(5) { api.enqueueSse(text + done) }
@@ -263,7 +263,7 @@ class StrictnessTest {
     // ---- additions of the API ----
 
     @Test
-    fun additionsOfTheApiDoNotFailDecoding() = runBlocking {
+    fun additionsOfTheApiDoNotFailDecoding() = runBlocking<Unit> {
         // An unknown property (nested too), an explicit null for an optional property.
         val event = TungoJson.decoder.decodeFromString(
             ChatEvent.serializer(),
@@ -297,7 +297,7 @@ class StrictnessTest {
     // ---- timeouts ----
 
     @Test
-    fun aWaitDeadlineHasItsOwnExceptionType() = runBlocking {
+    fun aWaitDeadlineHasItsOwnExceptionType() = runBlocking<Unit> {
         MockApi().use { api ->
             repeat(20) { api.enqueueJson(Fixtures.run("running")) }
             val error = assertFailsWith<TungoWaitTimeoutException> { api.client().automations.waitForRun("run_1", timeout = 10.seconds) }
@@ -314,7 +314,7 @@ class StrictnessTest {
     }
 
     @Test
-    fun aStreamThatDoesNotOpenReportsTheLimitsThatApply() = runBlocking {
+    fun aStreamThatDoesNotOpenReportsTheLimitsThatApply() = runBlocking<Unit> {
         MockApi().use { api ->
             api.server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
             val client = api.client {
@@ -333,7 +333,7 @@ class StrictnessTest {
     // ---- cancelling, retries of hooks ----
 
     @Test
-    fun cancellingTheCollectorMidStreamClosesTheConnectionAndIsNotWrapped() = runBlocking {
+    fun cancellingTheCollectorMidStreamClosesTheConnectionAndIsNotWrapped() = runBlocking<Unit> {
         val first = "data: {\"type\":\"text\",\"delta\":\"раз\"}\n\n"
         SseSocketServer(first, "data: {\"type\":\"done\"}\n\n").use { server ->
             TungoClient { apiKey = MockApi.KEY; baseUrl = server.baseUrl; companyId = "co_1" }.use { client ->
@@ -364,7 +364,7 @@ class StrictnessTest {
     }
 
     @Test
-    fun sendHookIsRetriedWithTheSameKeyBodyAndSignature() = runBlocking {
+    fun sendHookIsRetriedWithTheSameKeyBodyAndSignature() = runBlocking<Unit> {
         MockApi().use { api ->
             val client = api.client()
             api.server.enqueue(MockResponse().setResponseCode(503))

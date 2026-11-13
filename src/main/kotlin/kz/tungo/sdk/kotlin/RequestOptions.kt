@@ -48,6 +48,18 @@ public class RequestOptions private constructor(builder: Builder) {
         return builder.build()
     }
 
+    /** A copy of these options with one more header. */
+    internal fun withHeader(name: String, value: String): RequestOptions {
+        val builder = Builder()
+        builder.timeout = timeout
+        builder.maxRetries = maxRetries
+        builder.idempotencyKey = idempotencyKey
+        builder.streamIdleTimeout = streamIdleTimeout
+        builder.headers.putAll(headers.filterKeys { !it.equals(name, ignoreCase = true) })
+        builder.headers[name] = value
+        return builder.build()
+    }
+
     override fun toString(): String =
         "RequestOptions(timeout=$timeout, maxRetries=$maxRetries, idempotencyKey=$idempotencyKey, headers=${headers.keys})"
 

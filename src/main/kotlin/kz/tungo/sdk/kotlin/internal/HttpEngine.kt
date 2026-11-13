@@ -396,7 +396,8 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
             // ignores it, and sending it would make a retry look safe when it repeats the action.
             headers.removeAll(IDEMPOTENCY_HEADER)
             val idempotencyKey = if (spec.idempotent) {
-                requestOptions.idempotencyKey ?: spec.defaultIdempotencyKey?.takeIf { it.isNotEmpty() } ?: UUID.randomUUID().toString()
+                requestOptions.idempotencyKey ?: spec.defaultIdempotencyKey?.takeIf { it.isNotEmpty() }
+                    ?: bodyIdempotencyKey(spec.payload) ?: UUID.randomUUID().toString()
             } else {
                 null
             }
@@ -618,4 +619,20 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
             })
         }
     }
+}
+
+/**
+ * The `idempotency_key` field of a JSON object body (approving a proposal documents it as the same
+ * as the header), trimmed like the API trims it. The API prefers the header over the field, so a
+ * generated header would make the caller's own key useless. A key that cannot travel in a header
+ * (outside printable ASCII) is ignored here.
+ */
+internal fun bodyIdempotencyKey(payload: RequestPayload?): String? {
+    if (payload == null || !payload.contentType.startsWith("application/json")) return null
+    val text = payload.bytes.toString(Charsets.UTF_8)
+    if ("idempotency_key" !in text) return null
+    val value = Errors.parseObject(text)?.get("idempotency_key") as? JsonPrimitive ?: return null
+    if (!value.isString) return null
+    val key = value.content.trim()
+    return key.takeIf { it.isNotEmpty() && it.all { c -> c in ' '..'~' } }
 }
