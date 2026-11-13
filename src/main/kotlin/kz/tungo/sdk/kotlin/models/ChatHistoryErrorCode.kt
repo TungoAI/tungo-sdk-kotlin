@@ -36,6 +36,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 /**
  * Причина:
  * - `budget` — кончился лимит (дня или разговора)
+ * - `parallel_turns_limit` — у человека уже идёт предельное число ходов ИИ (тариф без доп. использования) — дождаться ответа на предыдущие вопросы
  * - `rate_limited` — сервис модели перегружен — повторите
  * - `api` — сбой сервиса модели
  * - `refusal` — модель отказалась отвечать
@@ -63,6 +64,7 @@ public value class ChatHistoryErrorCode(public val value: String) {
 
     public companion object {
         public val BUDGET: ChatHistoryErrorCode = ChatHistoryErrorCode("budget")
+        public val PARALLEL_TURNS_LIMIT: ChatHistoryErrorCode = ChatHistoryErrorCode("parallel_turns_limit")
         public val RATE_LIMITED: ChatHistoryErrorCode = ChatHistoryErrorCode("rate_limited")
         public val API: ChatHistoryErrorCode = ChatHistoryErrorCode("api")
         public val REFUSAL: ChatHistoryErrorCode = ChatHistoryErrorCode("refusal")
@@ -79,6 +81,6 @@ public value class ChatHistoryErrorCode(public val value: String) {
         public val BATCH_ABANDONED: ChatHistoryErrorCode = ChatHistoryErrorCode("batch_abandoned")
 
         /** The values known to this version of the SDK. */
-        public val entries: List<ChatHistoryErrorCode> = listOf(BUDGET, RATE_LIMITED, API, REFUSAL, CONTEXT_OVERFLOW, ABORTED, MAX_ITERATIONS, MAX_TOKENS, EMPTY_ANSWER, UNEXPECTED, HISTORY, INTERNAL, STREAM_FAILED, BATCH_FAILED, BATCH_ABANDONED)
+        public val entries: List<ChatHistoryErrorCode> = listOf(BUDGET, PARALLEL_TURNS_LIMIT, RATE_LIMITED, API, REFUSAL, CONTEXT_OVERFLOW, ABORTED, MAX_ITERATIONS, MAX_TOKENS, EMPTY_ANSWER, UNEXPECTED, HISTORY, INTERNAL, STREAM_FAILED, BATCH_FAILED, BATCH_ABANDONED)
     }
 }

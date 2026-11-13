@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation("kz.tungo:tungo-sdk-kotlin:0.2.0") // x-release-version
+    implementation("kz.tungo:tungo-sdk-kotlin:0.3.0") // x-release-version
 }
 
 kotlin {

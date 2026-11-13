@@ -44,7 +44,9 @@ public data class ApiKeyRolled(
     /** С каких IP и подсетей CIDR ключ работает; с другого адреса — 403 ip_not_allowed. null — с любых */
     @SerialName("allowed_ips")
     public val allowedIps: List<String>?,
-    /** Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) */
+    /**
+     * Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) и у ключа без компаний (no_companies)
+     */
     @SerialName("company_ids")
     public val companyIds: List<String>,
     /** Когда выпущен, ISO 8601 UTC */
@@ -64,9 +66,11 @@ public data class ApiKeyRolled(
     /** id ключа (key_…) — для адресов …/api-keys/{id} */
     @SerialName("id")
     public val id: String,
-    /** Новый ключ целиком (tg_…) — один раз: показать с кнопкой «Скопировать» */
+    /**
+     * Новый ключ целиком (tg_…) — один раз: показать с кнопкой «Скопировать». В повторе по Idempotency-Key — null
+     */
     @SerialName("key")
-    public val key: String,
+    public val key: String?,
     /** Когда ключом пользовались последний раз, ISO 8601 UTC (точность — около минуты); null — ещё ни разу */
     @SerialName("last_used_at")
     public val lastUsedAt: String?,
@@ -81,6 +85,11 @@ public data class ApiKeyRolled(
     /** Название ключа для людей */
     @SerialName("name")
     public val name: String,
+    /**
+     * Ключ без доступа к компаниям и их 1С: company_ids пуст, all_companies = false; компаний не видит никогда. Пустой company_ids сам по себе вида не называет — смотреть на all_companies и no_companies
+     */
+    @SerialName("no_companies")
+    public val noCompanies: Boolean,
     /**
      * Права ключа: `company.read` — читать данные компаний (есть всегда); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись в 1С; `automations.read` —…
      */
@@ -127,6 +136,11 @@ public data class ApiKeyRolled(
      */
     @SerialName("write_max_amount_per_document_tiyn")
     public val writeMaxAmountPerDocumentTiyn: Long?,
+    /**
+     * Только в повторе по Idempotency-Key: почему key = null и что делать, если новый секрет потерян (сменить ещё раз)
+     */
+    @SerialName("key_note")
+    public val keyNote: String? = null,
 ) {
     /** Like the generated one, with [REDACTED] in place of the credentials of this model. */
     override fun toString(): String =
@@ -139,11 +153,12 @@ public data class ApiKeyRolled(
             "disabledAt=${disabledAt}, " +
             "expiresAt=${expiresAt}, " +
             "id=${id}, " +
-            "key=[REDACTED], " +
+            "key=${if (key == null) "null" else "[REDACTED]"}, " +
             "lastUsedAt=${lastUsedAt}, " +
             "lastUsedIp=${lastUsedIp}, " +
             "monthlyCapTiyn=${monthlyCapTiyn}, " +
             "name=${name}, " +
+            "noCompanies=${noCompanies}, " +
             "permissions=${permissions}, " +
             "prefix=${prefix}, " +
             "previousSecretValidUntil=${previousSecretValidUntil}, " +
@@ -153,5 +168,6 @@ public data class ApiKeyRolled(
             "workspaceId=${workspaceId}, " +
             "writeKinds=${writeKinds}, " +
             "writeMaxAmountPerDayTiyn=${writeMaxAmountPerDayTiyn}, " +
-            "writeMaxAmountPerDocumentTiyn=${writeMaxAmountPerDocumentTiyn})"
+            "writeMaxAmountPerDocumentTiyn=${writeMaxAmountPerDocumentTiyn}, " +
+            "keyNote=${keyNote})"
 }

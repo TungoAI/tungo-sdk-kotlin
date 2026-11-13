@@ -8,7 +8,7 @@ internal object Fixtures {
             """"workspace_id":"ws_1","a_field_from_the_future":{"x":[1,2,3]}}"""
 
     fun dialog(id: String): String =
-        """{"id":"$id","message_count":3,"running":false,"title":"Разговор $id","updated_at":"2026-01-02T03:04:05Z"}"""
+        """{"id":"$id","message_count":3,"running":false,"title":"Разговор $id","title_source":"user","updated_at":"2026-01-02T03:04:05Z"}"""
 
     fun dialogs(next: String?, vararg ids: String): String =
         """{"data":[${ids.joinToString(",") { dialog(it) }}],"next_cursor":${if (next == null) "null" else "\"$next\""}}"""
@@ -29,7 +29,8 @@ internal object Fixtures {
         """{"input_cost_tiyn":9007199254740993,"input_tokens":1200,"max_cost_tiyn":9223372036854775807,"max_output_tokens":4096,"model":"m"}"""
 
     const val TURN: String =
-        """{"answer":"Готово","citations":[],"dialog_id":"d_1","errors":[],"pending_question":null,"proposals":[],"questions":[],""" +
+        """{"answer":"Готово","citations":[],"dialog_id":"d_1","errors":[],"followups":[],"pending_question":null,"proposals":[],""" +
+            """"questions":[],""" +
             """"stop_reason":"end_turn","turn_no":2}"""
 
     const val HOOK_ACCEPTED: String = """{"accepted":true,"duplicate":false,"event_id":"evt_1","run_ids":["run_1"]}"""

@@ -37,11 +37,13 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 @Serializable
 public data class AuditEntry(
     /**
-     * Что сделано — машинное имя вида «объект.действие»; подпись по-русски — в action_title. Значения: - `company.created` — Компания заведена - `company.updated` — Карточка компании изменена - `company.archived` — Компания уб…
+     * Код действия вида «объект.действие». Текст для человека собирайте сами на его языке: по этому коду и параметрам из data (ниже — что значит каждый код). Значения: - `company.created` — Компания заведена - `company.updated…
      */
     @SerialName("action")
     public val action: AuditEntryAction,
-    /** Что сделано, по-русски — для показа */
+    /**
+     * Что сделано, готовой фразой по-русски. Оставлено для совместимости: фраза всегда русская, поэтому для показа берите код action и параметры data и подставляйте текст на языке человека Deprecated by the API.
+     */
     @SerialName("action_title")
     public val actionTitle: String,
     /** Кто сделал */
@@ -61,6 +63,11 @@ public data class AuditEntry(
     /** IP, с которого пришёл запрос; null — фоновое действие */
     @SerialName("ip")
     public val ip: String?,
+    /**
+     * Над чем сделано — с названием, чтобы не показывать безликое «Организация»: в отличие от target, у действий с вебхуком это сам адрес вебхука, у платежа есть сумма и назначение. null — без отдельного объекта. По ключу API …
+     */
+    @SerialName("object")
+    public val `object`: AuditEntryObject?,
     /** Номер запроса (req_…) — по нему поддержка найдёт запрос; null — фоновое действие */
     @SerialName("request_id")
     public val requestId: String?,
@@ -68,7 +75,7 @@ public data class AuditEntry(
     @SerialName("target")
     public val target: AuditEntryTarget?,
     /**
-     * Подробности действия (JSON, ключи snake_case): например { before, after } у изменений. Вид зависит от action — показывать как дополнительные сведения
+     * Параметры действия (JSON, ключи snake_case) — для подстановки в текст и для подробностей: например { role } у смены роли, { from, amount_tiyn, kind } у платежа, { before, after } у изменений. Набор зависит от action
      */
     @SerialName("data")
     public val data: JsonElement? = null,

@@ -143,6 +143,44 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
         withRawResponse.countTokens(body, companyId, requestOptions).body
 
     /**
+     * Что можно упомянуть через «@»
+     *
+     * `GET /v1/companies/{co}/chat/mentions`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param limit Сколько на каждый вид: 1–20, по умолчанию 8
+     * @param q Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
+     * @param types Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun listMentions(
+        limit: Int? = null,
+        q: String? = null,
+        types: String? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatMentionSearch =
+        withRawResponse.listMentions(limit, q, types, companyId, requestOptions).body
+
+    /**
+     * Подсказки пустого чата
+     *
+     * `GET /v1/companies/{co}/chat/suggestions`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param lang Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun listSuggestions(
+        lang: ListCompanyChatSuggestionsLang? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatSuggestions =
+        withRawResponse.listSuggestions(lang, companyId, requestOptions).body
+
+    /**
      * Разговор целиком
      *
      * `GET /v1/companies/{co}/chat/{id}`
@@ -366,6 +404,62 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
                 ),
                 requestOptions,
                 ChatTokenCount.serializer(),
+            )
+
+        /**
+         * Что можно упомянуть через «@»
+         *
+         * `GET /v1/companies/{co}/chat/mentions`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param limit Сколько на каждый вид: 1–20, по умолчанию 8
+         * @param q Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
+         * @param types Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun listMentions(
+            limit: Int? = null,
+            q: String? = null,
+            types: String? = null,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatMentionSearch> =
+            engine.json(
+                RequestSpec(
+                    method = "GET",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/mentions",
+                    auth = AuthMode.KEY,
+                    query = QueryBuilder().add("limit", limit).add("q", q).add("types", types),
+                ),
+                requestOptions,
+                ChatMentionSearch.serializer(),
+            )
+
+        /**
+         * Подсказки пустого чата
+         *
+         * `GET /v1/companies/{co}/chat/suggestions`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param lang Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun listSuggestions(
+            lang: ListCompanyChatSuggestionsLang? = null,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatSuggestions> =
+            engine.json(
+                RequestSpec(
+                    method = "GET",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/suggestions",
+                    auth = AuthMode.KEY,
+                    query = QueryBuilder().add("lang", lang?.value),
+                ),
+                requestOptions,
+                ChatSuggestions.serializer(),
             )
 
         /**

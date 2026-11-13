@@ -68,7 +68,9 @@ internal object ChatEventSerializer : KSerializer<ChatEvent> {
             "error" -> json.decodeOrNull(ChatEventError.serializer())
             "batch" -> json.decodeOrNull(ChatEventBatch.serializer())
             "batch_report" -> json.decodeOrNull(ChatEventBatchReport.serializer())
+            "next" -> json.decodeOrNull(ChatEventNext.serializer())
             "done" -> json.decodeOrNull(ChatEventDone.serializer())
+            "title" -> json.decodeOrNull(ChatEventTitle.serializer())
             else -> null
         }
         return known ?: ChatEvent.Unknown(tag, json)
@@ -89,7 +91,9 @@ internal object ChatEventSerializer : KSerializer<ChatEvent> {
             is ChatEventError -> output.encodeSerializableValue(ChatEventError.serializer(), value)
             is ChatEventBatch -> output.encodeSerializableValue(ChatEventBatch.serializer(), value)
             is ChatEventBatchReport -> output.encodeSerializableValue(ChatEventBatchReport.serializer(), value)
+            is ChatEventNext -> output.encodeSerializableValue(ChatEventNext.serializer(), value)
             is ChatEventDone -> output.encodeSerializableValue(ChatEventDone.serializer(), value)
+            is ChatEventTitle -> output.encodeSerializableValue(ChatEventTitle.serializer(), value)
             is ChatEvent.Unknown -> output.encodeJsonElement(value.json)
         }
     }

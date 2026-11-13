@@ -34,7 +34,7 @@ import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
 /**
- * Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | question | error
+ * Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | batch | question | error
  *
  * A union tagged by the property `kind`. A variant this version of the SDK does not know, or whose payload does not have the shape the contract describes, is decoded as [Unknown].
  */
@@ -59,6 +59,7 @@ internal object ChatHistoryBlockSerializer : KSerializer<ChatHistoryBlock> {
             "text" -> json.decodeOrNull(ChatHistoryText.serializer())
             "tool" -> json.decodeOrNull(ChatHistoryTool.serializer())
             "proposal" -> json.decodeOrNull(ChatHistoryProposal.serializer())
+            "batch" -> json.decodeOrNull(ChatHistoryBatch.serializer())
             "question" -> json.decodeOrNull(ChatHistoryQuestion.serializer())
             "error" -> json.decodeOrNull(ChatHistoryError.serializer())
             else -> null
@@ -72,6 +73,7 @@ internal object ChatHistoryBlockSerializer : KSerializer<ChatHistoryBlock> {
             is ChatHistoryText -> output.encodeSerializableValue(ChatHistoryText.serializer(), value)
             is ChatHistoryTool -> output.encodeSerializableValue(ChatHistoryTool.serializer(), value)
             is ChatHistoryProposal -> output.encodeSerializableValue(ChatHistoryProposal.serializer(), value)
+            is ChatHistoryBatch -> output.encodeSerializableValue(ChatHistoryBatch.serializer(), value)
             is ChatHistoryQuestion -> output.encodeSerializableValue(ChatHistoryQuestion.serializer(), value)
             is ChatHistoryError -> output.encodeSerializableValue(ChatHistoryError.serializer(), value)
             is ChatHistoryBlock.Unknown -> output.encodeJsonElement(value.json)

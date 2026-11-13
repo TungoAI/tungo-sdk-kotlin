@@ -50,6 +50,11 @@ public data class PlatformLedgerEntry(
     /** Баланс после движения в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
     @SerialName("balance_after_tiyn")
     public val balanceAfterTiyn: Long,
+    /**
+     * Документы пополнения (kind = purchase) из его платежа. null — у остальных видов и у ключа не на все компании. Файл PDF ядро не формирует: чек выпускает касса, ссылка появляется в receipt_url
+     */
+    @SerialName("documents")
+    public val documents: PlatformLedgerEntryDocuments?,
     /** id движения (led_…); он же — курсор */
     @SerialName("id")
     public val id: String,

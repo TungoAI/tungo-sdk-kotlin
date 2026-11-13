@@ -40,7 +40,7 @@ public data class ChatHistoryError(
     @SerialName("message")
     public val message: String,
     /**
-     * Причина: - `budget` — кончился лимит (дня или разговора) - `rate_limited` — сервис модели перегружен — повторите - `api` — сбой сервиса модели - `refusal` — модель отказалась отвечать - `context_overflow` — разговор слиш…
+     * Причина: - `budget` — кончился лимит (дня или разговора) - `parallel_turns_limit` — у человека уже идёт предельное число ходов ИИ (тариф без доп. использования) — дождаться ответа на предыдущие вопросы - `rate_limited` —…
      */
     @SerialName("code")
     public val code: ChatHistoryErrorCode? = null,

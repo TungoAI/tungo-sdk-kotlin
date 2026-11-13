@@ -34,7 +34,7 @@ import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
 /**
- * Форма: ip — ИП, too — ТОО, ao — АО, other — другое
+ * Форма: ip — ИП, too — ТОО, ao — АО, other — другое; null — ещё не указана (задаётся в карточке компании: PATCH /v1/companies/{co})
  *
  * An open enumeration: a value this version of the SDK does not know is kept as it is, see [isKnown].
  */

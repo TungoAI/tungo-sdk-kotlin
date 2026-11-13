@@ -48,7 +48,7 @@ public data class Company(
     @SerialName("id")
     public val id: String,
     @SerialName("legal_form")
-    public val legalForm: CompanyLegalForm,
+    public val legalForm: CompanyLegalForm?,
     /** Название компании, как его ввели при заведении */
     @SerialName("name")
     public val name: String,

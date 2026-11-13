@@ -59,6 +59,11 @@ public data class BatchSummary(
     /** true — задание ещё идёт: кнопка «Одобрить» выключена */
     @SerialName("running")
     public val running: Boolean,
+    /**
+     * Данные файла выписки (счёт, банк, период, остатки); null — задание не по файлу выписки (ЭСФ, DirectBank, одобрение) или заведено до появления поля
+     */
+    @SerialName("statement")
+    public val statement: BatchStatement?,
     /** Название задания */
     @SerialName("title")
     public val title: String,

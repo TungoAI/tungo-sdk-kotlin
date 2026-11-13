@@ -49,4 +49,9 @@ public data class CardSession(
     /** Адрес скрипта платёжной формы ePay: подключить его на странице (тег script) перед открытием формы */
     @SerialName("script_url")
     public val scriptUrl: String,
+    /**
+     * true — тестовый терминал ePay: настоящие деньги не списываются, платят тестовыми картами. Показать на форме пометку «тестовая оплата»
+     */
+    @SerialName("test_mode")
+    public val testMode: Boolean,
 )

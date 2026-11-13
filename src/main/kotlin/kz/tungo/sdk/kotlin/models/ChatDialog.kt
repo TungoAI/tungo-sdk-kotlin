@@ -63,9 +63,11 @@ public data class ChatDialog(
     /** true — идёт ход: дочитать его потоком GET …/chat/{id}/events?turn=<turn> */
     @SerialName("running")
     public val running: Boolean,
-    /** Заголовок — первый вопрос одной строкой */
+    /** Название одной строкой: человека, иначе от ИИ, иначе первый вопрос. Откуда оно — title_source */
     @SerialName("title")
     public val title: String,
+    @SerialName("title_source")
+    public val titleSource: ChatTitleSource,
     /** Номер текущего хода (если идёт) или число законченных ходов */
     @SerialName("turn")
     public val turn: Double,

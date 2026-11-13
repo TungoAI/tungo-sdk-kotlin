@@ -39,7 +39,14 @@ public data class UsageRate(
     /** Цена 1 млн токенов чтения из кэша модели в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
     @SerialName("cache_read_per_mtok_tiyn")
     public val cacheReadPerMtokTiyn: Long,
-    /** Цена 1 млн токенов записи в кэш модели в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
+    /**
+     * Цена 1 млн токенов записи в кэш модели на 1 час (дороже: так кэшируются правила и инструменты) в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+     */
+    @SerialName("cache_write_1h_per_mtok_tiyn")
+    public val cacheWrite1hPerMtokTiyn: Long,
+    /**
+     * Цена 1 млн токенов записи в кэш модели на 5 минут в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+     */
     @SerialName("cache_write_per_mtok_tiyn")
     public val cacheWritePerMtokTiyn: Long,
     /** С какого момента действует цена, ISO 8601 UTC */
@@ -50,10 +57,15 @@ public data class UsageRate(
      */
     @SerialName("input_per_mtok_tiyn")
     public val inputPerMtokTiyn: Long,
-    /** Модель ИИ (техническое имя) */
+    /**
+     * Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search — поиск по нормам, tungo-legacy — прежняя)
+     */
     @SerialName("model")
     public val model: String,
     /** Цена 1 млн токенов ответа в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
     @SerialName("output_per_mtok_tiyn")
     public val outputPerMtokTiyn: Long,
+    /** Название модели для людей */
+    @SerialName("title")
+    public val title: String,
 )

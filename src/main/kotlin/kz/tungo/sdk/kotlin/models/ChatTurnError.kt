@@ -37,7 +37,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 @Serializable(with = ChatTurnErrorSerializer::class)
 public data class ChatTurnError(
     /**
-     * Причина: - `budget` — кончился лимит (дня или разговора) - `rate_limited` — сервис модели перегружен — повторите - `api` — сбой сервиса модели - `refusal` — модель отказалась отвечать - `context_overflow` — разговор слиш…
+     * Причина: - `budget` — кончился лимит (дня или разговора) - `parallel_turns_limit` — у человека уже идёт предельное число ходов ИИ (тариф без доп. использования) — дождаться ответа на предыдущие вопросы - `rate_limited` —…
      */
     @SerialName("code")
     public val code: ChatTurnErrorCode,
@@ -49,10 +49,14 @@ public data class ChatTurnError(
      */
     @SerialName("type")
     public val type: String,
-    /** Только у code = budget: лимит можно попросить поднять у админа */
+    /**
+     * Только у code = budget с limit_kind day или dialog: лимит можно попросить поднять у владельца или админа организации. Нет — просить некого (человек сам владелец или админ) или причина не в этом лимите
+     */
     @SerialName("can_request_more")
     public val canRequestMore: Boolean? = null,
-    /** Только у code = budget: day — дневной лимит, dialog — лимит разговора */
+    /**
+     * Только у code = budget — почему ход остановлен: - `day` — дневной лимит человека исчерпан — продолжить завтра (по Алматы) или поднять лимит - `dialog` — лимит разговора исчерпан — начать новый разговор - `turn` — потолок…
+     */
     @SerialName("limit_kind")
     public val limitKind: ChatTurnErrorLimitKind? = null,
     /** Properties sent by the API that the contract does not name. */

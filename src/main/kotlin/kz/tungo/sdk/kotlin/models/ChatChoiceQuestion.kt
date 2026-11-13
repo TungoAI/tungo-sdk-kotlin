@@ -33,9 +33,16 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Уточняющий вопрос ИИ с вариантами. Вариант «свой ответ» есть всегда и в options не входит */
+/**
+ * Вопрос с вариантами: уточняющий вопрос ИИ или подтверждение действия (confirm). Вариант «свой ответ» есть всегда и в options не входит
+ */
 @Serializable
 public data class ChatChoiceQuestion(
+    /**
+     * true — это не уточнение, а подтверждение действия: вопрос задала программа, действие выполнится только по кнопке согласия (первый вариант). Пропуск, свой текст и закрытие — отказ: кнопку «Пропустить» не показывать. false…
+     */
+    @SerialName("confirm")
+    public val confirm: Boolean,
     /** Короткая подпись вопроса, до ~12 символов (для вкладки или чипа) */
     @SerialName("header")
     public val header: String,

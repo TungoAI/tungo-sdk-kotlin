@@ -36,22 +36,28 @@ public class ProposalsResource internal constructor(internal val engine: HttpEng
      *
      * Required permission: `company.read`.
      *
+     * @param approvalRequested true — только отправленные на одобрение и ещё не решённые; false — только остальные
+     * @param batchId Только документы одного задания пачки (bat_…) — тот же состав, что в сводке задания и у «Одобрить и отправить в 1С». Не id задания — 400; задания нет — пустой список
      * @param cursor next_cursor из ответа прошлой страницы; без него — первая (самая свежая) страница. Остальные фильтры — те же, что у первой страницы.
      * @param dateFrom Созданные не раньше этого дня (ГГГГ-ММ-ДД, день по Алматы)
      * @param dateTo Созданные не позже этого дня включительно (ГГГГ-ММ-ДД, день по Алматы)
      * @param kind Только этих видов: один или несколько через запятую (sale, purchase, bank_receipt, bank_payment, counterparty, contract, revert, inventory_writeoff, cash_order_in, cash_order_out, advance_report). Неизвестный — 400
      * @param limit Сколько на странице: 1–100, по умолчанию 20
-     * @param q Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН и другие реквизиты документа
+     * @param q Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН, сумма (как пишут: «150 000,50» или 150000.5) и другие реквизиты документа
+     * @param source Только из этих источников (origin.source): один или несколько через запятую (chat, statement, esf, automation). Неизвестный — 400
      * @param status Только в этих статусах: один или несколько через запятую (previewed, approved, rejected, committed, posted, verified, mismatch, failed); без него — все. Неизвестный — 400
      * @param companyId the company; by default the company of the client
      */
     public suspend fun list(
+        approvalRequested: ListCompanyProposalsApprovalRequested? = null,
+        batchId: String? = null,
         cursor: String? = null,
         dateFrom: String? = null,
         dateTo: String? = null,
         kind: String? = null,
         limit: Int? = null,
         q: String? = null,
+        source: String? = null,
         status: String? = null,
         companyId: String? = null,
         requestOptions: RequestOptions = RequestOptions.Default,
@@ -61,13 +67,13 @@ public class ProposalsResource internal constructor(internal val engine: HttpEng
                 method = "GET",
                 path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/proposals",
                 auth = AuthMode.KEY,
-                query = QueryBuilder().add("cursor", cursor).add("date_from", dateFrom).add("date_to", dateTo).add("kind", kind).add("limit", limit).add("q", q).add("status", status),
+                query = QueryBuilder().add("approval_requested", approvalRequested?.value).add("batch_id", batchId).add("cursor", cursor).add("date_from", dateFrom).add("date_to", dateTo).add("kind", kind).add("limit", limit).add("q", q).add("source", source).add("status", status),
             ),
             requestOptions,
             ProposalPage.serializer(),
         )
         return Page(response.body.data, response.body.nextCursor, response, cursor) { next ->
-            list(next, dateFrom, dateTo, kind, limit, q, status, companyId, requestOptions)
+            list(approvalRequested, batchId, next, dateFrom, dateTo, kind, limit, q, source, status, companyId, requestOptions)
         }
     }
 
@@ -80,27 +86,33 @@ public class ProposalsResource internal constructor(internal val engine: HttpEng
      *
      * Required permission: `company.read`.
      *
+     * @param approvalRequested true — только отправленные на одобрение и ещё не решённые; false — только остальные
+     * @param batchId Только документы одного задания пачки (bat_…) — тот же состав, что в сводке задания и у «Одобрить и отправить в 1С». Не id задания — 400; задания нет — пустой список
      * @param cursor next_cursor из ответа прошлой страницы; без него — первая (самая свежая) страница. Остальные фильтры — те же, что у первой страницы.
      * @param dateFrom Созданные не раньше этого дня (ГГГГ-ММ-ДД, день по Алматы)
      * @param dateTo Созданные не позже этого дня включительно (ГГГГ-ММ-ДД, день по Алматы)
      * @param kind Только этих видов: один или несколько через запятую (sale, purchase, bank_receipt, bank_payment, counterparty, contract, revert, inventory_writeoff, cash_order_in, cash_order_out, advance_report). Неизвестный — 400
      * @param limit Сколько на странице: 1–100, по умолчанию 20
-     * @param q Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН и другие реквизиты документа
+     * @param q Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН, сумма (как пишут: «150 000,50» или 150000.5) и другие реквизиты документа
+     * @param source Только из этих источников (origin.source): один или несколько через запятую (chat, statement, esf, automation). Неизвестный — 400
      * @param status Только в этих статусах: один или несколько через запятую (previewed, approved, rejected, committed, posted, verified, mismatch, failed); без него — все. Неизвестный — 400
      * @param companyId the company; by default the company of the client
      */
     public fun listAll(
+        approvalRequested: ListCompanyProposalsApprovalRequested? = null,
+        batchId: String? = null,
         cursor: String? = null,
         dateFrom: String? = null,
         dateTo: String? = null,
         kind: String? = null,
         limit: Int? = null,
         q: String? = null,
+        source: String? = null,
         status: String? = null,
         companyId: String? = null,
         requestOptions: RequestOptions = RequestOptions.Default,
     ): Flow<ProposalListItem> = flow {
-        emitAll(list(cursor, dateFrom, dateTo, kind, limit, q, status, companyId, requestOptions).asFlow())
+        emitAll(list(approvalRequested, batchId, cursor, dateFrom, dateTo, kind, limit, q, source, status, companyId, requestOptions).asFlow())
     }
 
     /**
@@ -174,6 +186,25 @@ public class ProposalsResource internal constructor(internal val engine: HttpEng
         requestOptions: RequestOptions = RequestOptions.Default,
     ): ProposalDecision =
         withRawResponse.reject(id, body, companyId, requestOptions).body
+
+    /**
+     * Отправить на одобрение
+     *
+     * `POST /v1/companies/{co}/proposals/{id}/request-approval`
+     *
+     * Required permission: `proposals.create`.
+     *
+     * @param id Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+     * @param body the request body
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun requestApproval(
+        id: String,
+        body: ProposalApprovalRequestBody? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ProposalApprovalRequestResult =
+        withRawResponse.requestApproval(id, body, companyId, requestOptions).body
 
     /** Variant of [ProposalsResource] whose functions also return the response status and headers. */
     public inner class WithRawResponse internal constructor() {
@@ -284,6 +315,34 @@ public class ProposalsResource internal constructor(internal val engine: HttpEng
                 ),
                 requestOptions,
                 ProposalDecision.serializer(),
+            )
+
+        /**
+         * Отправить на одобрение
+         *
+         * `POST /v1/companies/{co}/proposals/{id}/request-approval`
+         *
+         * Required permission: `proposals.create`.
+         *
+         * @param id Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+         * @param body the request body
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun requestApproval(
+            id: String,
+            body: ProposalApprovalRequestBody? = null,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ProposalApprovalRequestResult> =
+            engine.json(
+                RequestSpec(
+                    method = "POST",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/proposals/" + pathSegment("id", id) + "/request-approval",
+                    auth = AuthMode.KEY,
+                    payload = body?.let { engine.jsonPayload(ProposalApprovalRequestBody.serializer(), it) },
+                ),
+                requestOptions,
+                ProposalApprovalRequestResult.serializer(),
             )
     }
 }

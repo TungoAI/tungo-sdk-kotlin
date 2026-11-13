@@ -49,7 +49,9 @@ public data class ApiKeyDetails(
      */
     @SerialName("blocked_reason")
     public val blockedReason: ApiKeyDetailsBlockedReason?,
-    /** Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) */
+    /**
+     * Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) и у ключа без компаний (no_companies)
+     */
     @SerialName("company_ids")
     public val companyIds: List<String>,
     /** Когда выпущен, ISO 8601 UTC */
@@ -83,6 +85,11 @@ public data class ApiKeyDetails(
     /** Название ключа для людей */
     @SerialName("name")
     public val name: String,
+    /**
+     * Ключ без доступа к компаниям и их 1С: company_ids пуст, all_companies = false; компаний не видит никогда. Пустой company_ids сам по себе вида не называет — смотреть на all_companies и no_companies
+     */
+    @SerialName("no_companies")
+    public val noCompanies: Boolean,
     /**
      * Права ключа: `company.read` — читать данные компаний (есть всегда); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись в 1С; `automations.read` —…
      */

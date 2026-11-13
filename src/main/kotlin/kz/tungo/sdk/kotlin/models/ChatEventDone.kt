@@ -33,7 +33,9 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Конец хода — приходит после записи хода в историю. Дальше событий не будет */
+/**
+ * Конец хода — приходит после записи хода в историю. Дальше событий хода не будет; в первом ходе разговора за ним может прийти одно title
+ */
 @Serializable
 public data class ChatEventDone(
     /** Итоговый ответ хода целиком (Markdown): заменить им собранный из text */

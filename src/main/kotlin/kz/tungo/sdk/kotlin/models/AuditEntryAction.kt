@@ -34,7 +34,7 @@ import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
 /**
- * Что сделано — машинное имя вида «объект.действие»; подпись по-русски — в action_title. Значения:
+ * Код действия вида «объект.действие». Текст для человека собирайте сами на его языке: по этому коду и параметрам из data (ниже — что значит каждый код). Значения:
  * - `company.created` — Компания заведена
  * - `company.updated` — Карточка компании изменена
  * - `company.archived` — Компания убрана в архив
@@ -51,12 +51,14 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  * - `company.onec_connector_code_created` — Выдан код привязки программы в офисе
  * - `company.onec_connector_paired` — Программа в офисе привязана
  * - `company.onec_connector_rotated` — Ключ программы в офисе заменён
+ * - `company.onec_connector_rotate_refused` — Отказ в повторе смены ключа программы в офисе: прежний ключ без метки той смены
  * - `company.onec_connector_revoked` — Программа в офисе отвязана
  * - `company.onec_connector_link_approved` — Привязка программы в офисе одобрена в кабинете
  * - `connector.link_created` — Программа в офисе запросила привязку через браузер
  * - `connector.link_denied` — Привязка программы в офисе отклонена
  * - `company.onec_link_approved` — Вход в Tungo из 1С подтверждён
  * - `company.onec_link_revoked` — Вход в Tungo из 1С отозван
+ * - `onec_link.wrong_match` — Вход в Tungo из 1С отменён: на сайте нажато не то число сверки
  * - `company.profile_rebuild` — Справка о компании пересобрана
  * - `workspace.member_joined` — Сотрудник вступил в организацию
  * - `workspace.member_role_changed` — Роль сотрудника в организации изменена
@@ -78,6 +80,8 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  * - `workspace.ownership_transferred` — Владение организацией передано
  * - `workspace.deleted` — Организация удалена
  * - `workspace.created` — Создана команда
+ * - `team.checkout_abandoned` — Оформление Team не завершено: черновик команды убран
+ * - `enterprise.request_created` — Отправлена заявка на Enterprise
  * - `workspace.converted_to_team` — Личная организация стала командой
  * - `workspace.deletion_scheduled` — Владелец запланировал удаление организации
  * - `workspace.deletion_cancelled` — Удаление организации отменено
@@ -123,6 +127,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  * - `billing.profile.updated` — Реквизиты для счетов изменены
  * - `billing.payment_method.disabled` — Карта отключена
  * - `billing.refund.succeeded` — Деньги возвращены
+ * - `billing.manual_charge` — Админ платформы списал деньги с карты вручную
  * - `subscription.created` — Подписка оформлена
  * - `subscription.changed` — Тариф изменён
  * - `subscription.cancel_scheduled` — Подписка отменена с конца периода
@@ -148,13 +153,49 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  * - `account.deletion_scheduled` — Аккаунт помечен к удалению
  * - `account.deletion_cancelled` — Удаление аккаунта отменено
  * - `account.deleted` — Аккаунт удалён и обезличен
+ * - `account.email_code_sent` — Запрошен код подтверждения почты (аккаунт Telegram)
+ * - `account.email_bound` — Почта привязана к аккаунту Telegram
+ * - `account.telegram_merged` — Telegram привязан к аккаунту с подтверждённой почтой, аккаунт Telegram закрыт
+ * - `account.google_linked` — Вход через Google привязал Google к аккаунту с той же почтой (sessions_closed — почта не была подтверждена: прежние сессии закрыты)
+ * - `account.telegram_merge_refused` — Склейка аккаунта Telegram с аккаунтом почты отклонена (данные, другой Telegram или почта закрыта)
+ * - `admin.ads.conversions_released` — Удержанные рекламные конверсии отправлены вручную
+ * - `admin.ads.conversions_rejected` — Рекламные конверсии отклонены
+ * - `admin.ads.signups_exported` — Выгрузка рекламных регистраций с IP и User-Agent (CSV)
+ * - `admin.access.signed_in` — Вход в админку по пропуску Cloudflare Access
+ * - `admin.access.refused` — Вход в админку по пропуску Cloudflare Access отклонён
+ * - `admin.two_factor.verified` — Администратор платформы подтвердил вход вторым фактором
+ * - `admin.two_factor.enable_requested` — Сотрудник платформы начал включать второй фактор (с кодом из почты)
+ * - `admin.two_factor.enabled` — Сотрудник платформы включил второй фактор
+ * - `admin.two_factor.disabled` — Сотрудник платформы отключил второй фактор (с кодом из почты)
+ * - `admin.session.signed_in` — Вход в админку по сессии со вторым фактором
+ * - `admin.user.banned` — Вход пользователю закрыт платформой
+ * - `admin.user.unbanned` — Вход пользователю открыт платформой
  * - `admin.workspace.blocked` — Организация заблокирована платформой
  * - `admin.workspace.unblocked` — Организация разблокирована платформой
  * - `admin.workspace.training_consent` — Согласие на обучение изменено (платформа)
  * - `admin.user.platform_roles_changed` — Роли платформы изменены
  * - `admin.user.free_eligibility_changed` — Бесплатный лимит пользователя выдан или снят вручную (платформа)
+ * - `admin.user.limit_resets_granted` — Человеку выданы сбросы лимита (платформа)
+ * - `admin.user.limit_resets_revoked` — Выданные сбросы лимита отозваны (платформа)
+ * - `usage.limit_reset_applied` — Применён сброс лимита
+ * - `referral.claimed` — Регистрация по приглашению друга
+ * - `referral.rewarded` — За приглашённого друга выдан сброс лимита
+ * - `admin.enterprise_request.status_changed` — Статус заявки Enterprise изменён (платформа)
  * - `admin.training.exported` — Выгрузка для обучения (платформа)
+ * - `admin.setting.changed` — Настройка платформы изменена
+ * - `admin.logs.purged` — Журнал запросов и итогов ходов ИИ убран вручную (платформа)
  * - `admin.dialog.pd_viewed` — Поддержка открыла разговор с персональными данными
+ * - `admin.dialog.label_set` — Оценка ответа для обучения поставлена или заменена (платформа)
+ * - `admin.dialog.label_removed` — Оценка ответа для обучения удалена (платформа)
+ * - `admin.journal.pd_viewed` — Поддержка открыла журнал ИИ-бухгалтера с персональными данными
+ * - `admin.company.pd_viewed` — Поддержка открыла карточку компании-ИП с ИИН
+ * - `admin.company.pd_searched` — Поддержка нашла компанию-ИП поиском по ИИН
+ * - `admin.payment.pd_viewed` — Поддержка открыла платёж с реквизитами плательщика и обменом с банком
+ * - `site.post_published` — Статья блога опубликована на сайте (платформа)
+ * - `site.post_unpublished` — Статья блога снята с сайта (платформа)
+ * - `site.post_deleted` — Черновик статьи блога удалён (платформа)
+ * - `site.legal_published` — Опубликована новая редакция документа сайта (платформа)
+ * - `site.trackers_saved` — Изменены счётчики и коды подтверждения сайта (платформа)
  * - `canary.triggered` — Сработала приманка: украденный ключ или почта «сотрудника» (платформа)
  * - `billing.payment.new` — Платёж: создан
  * - `billing.payment.pending` — Платёж: отправлен в банк
@@ -194,12 +235,14 @@ public value class AuditEntryAction(public val value: String) {
         public val COMPANY_ONEC_CONNECTOR_CODE_CREATED: AuditEntryAction = AuditEntryAction("company.onec_connector_code_created")
         public val COMPANY_ONEC_CONNECTOR_PAIRED: AuditEntryAction = AuditEntryAction("company.onec_connector_paired")
         public val COMPANY_ONEC_CONNECTOR_ROTATED: AuditEntryAction = AuditEntryAction("company.onec_connector_rotated")
+        public val COMPANY_ONEC_CONNECTOR_ROTATE_REFUSED: AuditEntryAction = AuditEntryAction("company.onec_connector_rotate_refused")
         public val COMPANY_ONEC_CONNECTOR_REVOKED: AuditEntryAction = AuditEntryAction("company.onec_connector_revoked")
         public val COMPANY_ONEC_CONNECTOR_LINK_APPROVED: AuditEntryAction = AuditEntryAction("company.onec_connector_link_approved")
         public val CONNECTOR_LINK_CREATED: AuditEntryAction = AuditEntryAction("connector.link_created")
         public val CONNECTOR_LINK_DENIED: AuditEntryAction = AuditEntryAction("connector.link_denied")
         public val COMPANY_ONEC_LINK_APPROVED: AuditEntryAction = AuditEntryAction("company.onec_link_approved")
         public val COMPANY_ONEC_LINK_REVOKED: AuditEntryAction = AuditEntryAction("company.onec_link_revoked")
+        public val ONEC_LINK_WRONG_MATCH: AuditEntryAction = AuditEntryAction("onec_link.wrong_match")
         public val COMPANY_PROFILE_REBUILD: AuditEntryAction = AuditEntryAction("company.profile_rebuild")
         public val WORKSPACE_MEMBER_JOINED: AuditEntryAction = AuditEntryAction("workspace.member_joined")
         public val WORKSPACE_MEMBER_ROLE_CHANGED: AuditEntryAction = AuditEntryAction("workspace.member_role_changed")
@@ -221,6 +264,8 @@ public value class AuditEntryAction(public val value: String) {
         public val WORKSPACE_OWNERSHIP_TRANSFERRED: AuditEntryAction = AuditEntryAction("workspace.ownership_transferred")
         public val WORKSPACE_DELETED: AuditEntryAction = AuditEntryAction("workspace.deleted")
         public val WORKSPACE_CREATED: AuditEntryAction = AuditEntryAction("workspace.created")
+        public val TEAM_CHECKOUT_ABANDONED: AuditEntryAction = AuditEntryAction("team.checkout_abandoned")
+        public val ENTERPRISE_REQUEST_CREATED: AuditEntryAction = AuditEntryAction("enterprise.request_created")
         public val WORKSPACE_CONVERTED_TO_TEAM: AuditEntryAction = AuditEntryAction("workspace.converted_to_team")
         public val WORKSPACE_DELETION_SCHEDULED: AuditEntryAction = AuditEntryAction("workspace.deletion_scheduled")
         public val WORKSPACE_DELETION_CANCELLED: AuditEntryAction = AuditEntryAction("workspace.deletion_cancelled")
@@ -266,6 +311,7 @@ public value class AuditEntryAction(public val value: String) {
         public val BILLING_PROFILE_UPDATED: AuditEntryAction = AuditEntryAction("billing.profile.updated")
         public val BILLING_PAYMENT_METHOD_DISABLED: AuditEntryAction = AuditEntryAction("billing.payment_method.disabled")
         public val BILLING_REFUND_SUCCEEDED: AuditEntryAction = AuditEntryAction("billing.refund.succeeded")
+        public val BILLING_MANUAL_CHARGE: AuditEntryAction = AuditEntryAction("billing.manual_charge")
         public val SUBSCRIPTION_CREATED: AuditEntryAction = AuditEntryAction("subscription.created")
         public val SUBSCRIPTION_CHANGED: AuditEntryAction = AuditEntryAction("subscription.changed")
         public val SUBSCRIPTION_CANCEL_SCHEDULED: AuditEntryAction = AuditEntryAction("subscription.cancel_scheduled")
@@ -291,13 +337,49 @@ public value class AuditEntryAction(public val value: String) {
         public val ACCOUNT_DELETION_SCHEDULED: AuditEntryAction = AuditEntryAction("account.deletion_scheduled")
         public val ACCOUNT_DELETION_CANCELLED: AuditEntryAction = AuditEntryAction("account.deletion_cancelled")
         public val ACCOUNT_DELETED: AuditEntryAction = AuditEntryAction("account.deleted")
+        public val ACCOUNT_EMAIL_CODE_SENT: AuditEntryAction = AuditEntryAction("account.email_code_sent")
+        public val ACCOUNT_EMAIL_BOUND: AuditEntryAction = AuditEntryAction("account.email_bound")
+        public val ACCOUNT_TELEGRAM_MERGED: AuditEntryAction = AuditEntryAction("account.telegram_merged")
+        public val ACCOUNT_GOOGLE_LINKED: AuditEntryAction = AuditEntryAction("account.google_linked")
+        public val ACCOUNT_TELEGRAM_MERGE_REFUSED: AuditEntryAction = AuditEntryAction("account.telegram_merge_refused")
+        public val ADMIN_ADS_CONVERSIONS_RELEASED: AuditEntryAction = AuditEntryAction("admin.ads.conversions_released")
+        public val ADMIN_ADS_CONVERSIONS_REJECTED: AuditEntryAction = AuditEntryAction("admin.ads.conversions_rejected")
+        public val ADMIN_ADS_SIGNUPS_EXPORTED: AuditEntryAction = AuditEntryAction("admin.ads.signups_exported")
+        public val ADMIN_ACCESS_SIGNED_IN: AuditEntryAction = AuditEntryAction("admin.access.signed_in")
+        public val ADMIN_ACCESS_REFUSED: AuditEntryAction = AuditEntryAction("admin.access.refused")
+        public val ADMIN_TWO_FACTOR_VERIFIED: AuditEntryAction = AuditEntryAction("admin.two_factor.verified")
+        public val ADMIN_TWO_FACTOR_ENABLE_REQUESTED: AuditEntryAction = AuditEntryAction("admin.two_factor.enable_requested")
+        public val ADMIN_TWO_FACTOR_ENABLED: AuditEntryAction = AuditEntryAction("admin.two_factor.enabled")
+        public val ADMIN_TWO_FACTOR_DISABLED: AuditEntryAction = AuditEntryAction("admin.two_factor.disabled")
+        public val ADMIN_SESSION_SIGNED_IN: AuditEntryAction = AuditEntryAction("admin.session.signed_in")
+        public val ADMIN_USER_BANNED: AuditEntryAction = AuditEntryAction("admin.user.banned")
+        public val ADMIN_USER_UNBANNED: AuditEntryAction = AuditEntryAction("admin.user.unbanned")
         public val ADMIN_WORKSPACE_BLOCKED: AuditEntryAction = AuditEntryAction("admin.workspace.blocked")
         public val ADMIN_WORKSPACE_UNBLOCKED: AuditEntryAction = AuditEntryAction("admin.workspace.unblocked")
         public val ADMIN_WORKSPACE_TRAINING_CONSENT: AuditEntryAction = AuditEntryAction("admin.workspace.training_consent")
         public val ADMIN_USER_PLATFORM_ROLES_CHANGED: AuditEntryAction = AuditEntryAction("admin.user.platform_roles_changed")
         public val ADMIN_USER_FREE_ELIGIBILITY_CHANGED: AuditEntryAction = AuditEntryAction("admin.user.free_eligibility_changed")
+        public val ADMIN_USER_LIMIT_RESETS_GRANTED: AuditEntryAction = AuditEntryAction("admin.user.limit_resets_granted")
+        public val ADMIN_USER_LIMIT_RESETS_REVOKED: AuditEntryAction = AuditEntryAction("admin.user.limit_resets_revoked")
+        public val USAGE_LIMIT_RESET_APPLIED: AuditEntryAction = AuditEntryAction("usage.limit_reset_applied")
+        public val REFERRAL_CLAIMED: AuditEntryAction = AuditEntryAction("referral.claimed")
+        public val REFERRAL_REWARDED: AuditEntryAction = AuditEntryAction("referral.rewarded")
+        public val ADMIN_ENTERPRISE_REQUEST_STATUS_CHANGED: AuditEntryAction = AuditEntryAction("admin.enterprise_request.status_changed")
         public val ADMIN_TRAINING_EXPORTED: AuditEntryAction = AuditEntryAction("admin.training.exported")
+        public val ADMIN_SETTING_CHANGED: AuditEntryAction = AuditEntryAction("admin.setting.changed")
+        public val ADMIN_LOGS_PURGED: AuditEntryAction = AuditEntryAction("admin.logs.purged")
         public val ADMIN_DIALOG_PD_VIEWED: AuditEntryAction = AuditEntryAction("admin.dialog.pd_viewed")
+        public val ADMIN_DIALOG_LABEL_SET: AuditEntryAction = AuditEntryAction("admin.dialog.label_set")
+        public val ADMIN_DIALOG_LABEL_REMOVED: AuditEntryAction = AuditEntryAction("admin.dialog.label_removed")
+        public val ADMIN_JOURNAL_PD_VIEWED: AuditEntryAction = AuditEntryAction("admin.journal.pd_viewed")
+        public val ADMIN_COMPANY_PD_VIEWED: AuditEntryAction = AuditEntryAction("admin.company.pd_viewed")
+        public val ADMIN_COMPANY_PD_SEARCHED: AuditEntryAction = AuditEntryAction("admin.company.pd_searched")
+        public val ADMIN_PAYMENT_PD_VIEWED: AuditEntryAction = AuditEntryAction("admin.payment.pd_viewed")
+        public val SITE_POST_PUBLISHED: AuditEntryAction = AuditEntryAction("site.post_published")
+        public val SITE_POST_UNPUBLISHED: AuditEntryAction = AuditEntryAction("site.post_unpublished")
+        public val SITE_POST_DELETED: AuditEntryAction = AuditEntryAction("site.post_deleted")
+        public val SITE_LEGAL_PUBLISHED: AuditEntryAction = AuditEntryAction("site.legal_published")
+        public val SITE_TRACKERS_SAVED: AuditEntryAction = AuditEntryAction("site.trackers_saved")
         public val CANARY_TRIGGERED: AuditEntryAction = AuditEntryAction("canary.triggered")
         public val BILLING_PAYMENT_NEW: AuditEntryAction = AuditEntryAction("billing.payment.new")
         public val BILLING_PAYMENT_PENDING: AuditEntryAction = AuditEntryAction("billing.payment.pending")
@@ -311,6 +393,6 @@ public value class AuditEntryAction(public val value: String) {
         public val BILLING_PAYMENT_REFUNDED: AuditEntryAction = AuditEntryAction("billing.payment.refunded")
 
         /** The values known to this version of the SDK. */
-        public val entries: List<AuditEntryAction> = listOf(COMPANY_CREATED, COMPANY_UPDATED, COMPANY_ARCHIVED, COMPANY_UNARCHIVED, COMPANY_MEMBER_ADDED, COMPANY_MEMBER_ROLE_CHANGED, COMPANY_MEMBER_REMOVED, COMPANY_ONBOARDING_WAIVED, COMPANY_ONBOARDING_UNWAIVED, COMPANY_ONEC_CONNECTED, COMPANY_ONEC_UPDATED, COMPANY_ONEC_COPY_UPLOADED, COMPANY_ONEC_COPY_HELD, COMPANY_ONEC_CONNECTOR_CODE_CREATED, COMPANY_ONEC_CONNECTOR_PAIRED, COMPANY_ONEC_CONNECTOR_ROTATED, COMPANY_ONEC_CONNECTOR_REVOKED, COMPANY_ONEC_CONNECTOR_LINK_APPROVED, CONNECTOR_LINK_CREATED, CONNECTOR_LINK_DENIED, COMPANY_ONEC_LINK_APPROVED, COMPANY_ONEC_LINK_REVOKED, COMPANY_PROFILE_REBUILD, WORKSPACE_MEMBER_JOINED, WORKSPACE_MEMBER_ROLE_CHANGED, WORKSPACE_MEMBER_REMOVED, WORKSPACE_MEMBER_ACCESS_REVOKED, WORKSPACE_INVITATION_CREATED, WORKSPACE_INVITATION_CANCELLED, WORKSPACE_POLICIES_UPDATED, WORKSPACE_SCIM_TOKEN_CREATED, WORKSPACE_SCIM_TOKEN_REVOKED, WORKSPACE_SCIM_USER_PROVISIONED, WORKSPACE_SCIM_USER_DEPROVISIONED, WORKSPACE_SCIM_USER_DELETED, WORKSPACE_UPDATED, WORKSPACE_SSO_PROVIDER_UPDATED, WORKSPACE_SSO_PROVIDER_DELETED, WORKSPACE_SSO_DOMAIN_VERIFICATION_REQUESTED, WORKSPACE_SSO_DOMAIN_VERIFIED, WORKSPACE_OWNERSHIP_TRANSFERRED, WORKSPACE_DELETED, WORKSPACE_CREATED, WORKSPACE_CONVERTED_TO_TEAM, WORKSPACE_DELETION_SCHEDULED, WORKSPACE_DELETION_CANCELLED, WORKSPACE_INVITATION_RESENT, TEAM_SEATS_PURCHASED, TEAM_SEATS_REDUCED, ADMIN_WORKSPACE_KIND_CHANGED, ADMIN_WORKSPACE_CONTRACT_SEATS, WORKSPACE_SSO_PROVIDER_CREATED, WORKSPACE_GROUP_CREATED, WORKSPACE_GROUP_UPDATED, WORKSPACE_GROUP_DELETED, WORKSPACE_GROUP_MEMBER_ADDED, WORKSPACE_GROUP_MEMBER_REMOVED, WORKSPACE_GROUP_ROLES_CHANGED, WORKSPACE_CUSTOM_ROLE_CREATED, WORKSPACE_CUSTOM_ROLE_UPDATED, WORKSPACE_CUSTOM_ROLE_DELETED, WORKSPACE_ROLE_CEILING_UPDATED, WORKSPACE_MODEL_POLICY_UPDATED, WORKSPACE_RETENTION_UPDATED, WORKSPACE_TRAINING_CONSENT, WORKSPACE_AUDIT_EXPORTED, WORKSPACE_COMPLIANCE_UPDATED, WORKSPACE_COMPLIANCE_READ, API_KEY_CREATED, API_KEY_UPDATED, API_KEY_ROLLED, API_KEY_REVOKED, API_KEY_TRANSFERRED, API_KEY_DISABLED, API_KEY_ENABLED, WEBHOOK_ENDPOINT_CREATED, WEBHOOK_ENDPOINT_UPDATED, WEBHOOK_ENDPOINT_DELETED, WEBHOOK_SECRET_ROTATED, WEBHOOK_SECRET_READ, WEBHOOK_MESSAGE_RESENT, COMPANY_AUTONOMY_CHANGED, AUTOMATION_PAUSED, AUTOMATION_RESUMED, AUTOMATION_RUN_CANCEL, BILLING_PROFILE_UPDATED, BILLING_PAYMENT_METHOD_DISABLED, BILLING_REFUND_SUCCEEDED, SUBSCRIPTION_CREATED, SUBSCRIPTION_CHANGED, SUBSCRIPTION_CANCEL_SCHEDULED, SUBSCRIPTION_RESUMED, EXTRA_USAGE_CONFIGURED, EXTRA_USAGE_ADJUSTED, PLATFORM_CONFIGURED, PLATFORM_ADJUSTED, EXTRA_USAGE_MEMBER_CAP_SET, EXTRA_USAGE_ALERT_THRESHOLDS_SET, COMPANY_SPEND_CAP_SET, TEAM_ANALYTICS_EXPORTED, TEAM_SPEND_EXPORTED, AI_BUDGET_MEMBER_SET, AI_BUDGET_MEMBER_RESET, SPEND_CAP_THRESHOLD_REACHED, SPEND_COMPANY_CAP_REACHED, PLAN_CREATED, PLAN_UPDATED, USAGE_RATE_ADDED, USER_TERMS_ACCEPTED, ACCOUNT_DELETION_CODE_SENT, ACCOUNT_DELETION_SCHEDULED, ACCOUNT_DELETION_CANCELLED, ACCOUNT_DELETED, ADMIN_WORKSPACE_BLOCKED, ADMIN_WORKSPACE_UNBLOCKED, ADMIN_WORKSPACE_TRAINING_CONSENT, ADMIN_USER_PLATFORM_ROLES_CHANGED, ADMIN_USER_FREE_ELIGIBILITY_CHANGED, ADMIN_TRAINING_EXPORTED, ADMIN_DIALOG_PD_VIEWED, CANARY_TRIGGERED, BILLING_PAYMENT_NEW, BILLING_PAYMENT_PENDING, BILLING_PAYMENT_REQUIRES_ACTION, BILLING_PAYMENT_AUTHORIZED, BILLING_PAYMENT_SUCCEEDED, BILLING_PAYMENT_VERIFIED, BILLING_PAYMENT_FAILED, BILLING_PAYMENT_CANCELLED, BILLING_PAYMENT_PARTIALLY_REFUNDED, BILLING_PAYMENT_REFUNDED)
+        public val entries: List<AuditEntryAction> = listOf(COMPANY_CREATED, COMPANY_UPDATED, COMPANY_ARCHIVED, COMPANY_UNARCHIVED, COMPANY_MEMBER_ADDED, COMPANY_MEMBER_ROLE_CHANGED, COMPANY_MEMBER_REMOVED, COMPANY_ONBOARDING_WAIVED, COMPANY_ONBOARDING_UNWAIVED, COMPANY_ONEC_CONNECTED, COMPANY_ONEC_UPDATED, COMPANY_ONEC_COPY_UPLOADED, COMPANY_ONEC_COPY_HELD, COMPANY_ONEC_CONNECTOR_CODE_CREATED, COMPANY_ONEC_CONNECTOR_PAIRED, COMPANY_ONEC_CONNECTOR_ROTATED, COMPANY_ONEC_CONNECTOR_ROTATE_REFUSED, COMPANY_ONEC_CONNECTOR_REVOKED, COMPANY_ONEC_CONNECTOR_LINK_APPROVED, CONNECTOR_LINK_CREATED, CONNECTOR_LINK_DENIED, COMPANY_ONEC_LINK_APPROVED, COMPANY_ONEC_LINK_REVOKED, ONEC_LINK_WRONG_MATCH, COMPANY_PROFILE_REBUILD, WORKSPACE_MEMBER_JOINED, WORKSPACE_MEMBER_ROLE_CHANGED, WORKSPACE_MEMBER_REMOVED, WORKSPACE_MEMBER_ACCESS_REVOKED, WORKSPACE_INVITATION_CREATED, WORKSPACE_INVITATION_CANCELLED, WORKSPACE_POLICIES_UPDATED, WORKSPACE_SCIM_TOKEN_CREATED, WORKSPACE_SCIM_TOKEN_REVOKED, WORKSPACE_SCIM_USER_PROVISIONED, WORKSPACE_SCIM_USER_DEPROVISIONED, WORKSPACE_SCIM_USER_DELETED, WORKSPACE_UPDATED, WORKSPACE_SSO_PROVIDER_UPDATED, WORKSPACE_SSO_PROVIDER_DELETED, WORKSPACE_SSO_DOMAIN_VERIFICATION_REQUESTED, WORKSPACE_SSO_DOMAIN_VERIFIED, WORKSPACE_OWNERSHIP_TRANSFERRED, WORKSPACE_DELETED, WORKSPACE_CREATED, TEAM_CHECKOUT_ABANDONED, ENTERPRISE_REQUEST_CREATED, WORKSPACE_CONVERTED_TO_TEAM, WORKSPACE_DELETION_SCHEDULED, WORKSPACE_DELETION_CANCELLED, WORKSPACE_INVITATION_RESENT, TEAM_SEATS_PURCHASED, TEAM_SEATS_REDUCED, ADMIN_WORKSPACE_KIND_CHANGED, ADMIN_WORKSPACE_CONTRACT_SEATS, WORKSPACE_SSO_PROVIDER_CREATED, WORKSPACE_GROUP_CREATED, WORKSPACE_GROUP_UPDATED, WORKSPACE_GROUP_DELETED, WORKSPACE_GROUP_MEMBER_ADDED, WORKSPACE_GROUP_MEMBER_REMOVED, WORKSPACE_GROUP_ROLES_CHANGED, WORKSPACE_CUSTOM_ROLE_CREATED, WORKSPACE_CUSTOM_ROLE_UPDATED, WORKSPACE_CUSTOM_ROLE_DELETED, WORKSPACE_ROLE_CEILING_UPDATED, WORKSPACE_MODEL_POLICY_UPDATED, WORKSPACE_RETENTION_UPDATED, WORKSPACE_TRAINING_CONSENT, WORKSPACE_AUDIT_EXPORTED, WORKSPACE_COMPLIANCE_UPDATED, WORKSPACE_COMPLIANCE_READ, API_KEY_CREATED, API_KEY_UPDATED, API_KEY_ROLLED, API_KEY_REVOKED, API_KEY_TRANSFERRED, API_KEY_DISABLED, API_KEY_ENABLED, WEBHOOK_ENDPOINT_CREATED, WEBHOOK_ENDPOINT_UPDATED, WEBHOOK_ENDPOINT_DELETED, WEBHOOK_SECRET_ROTATED, WEBHOOK_SECRET_READ, WEBHOOK_MESSAGE_RESENT, COMPANY_AUTONOMY_CHANGED, AUTOMATION_PAUSED, AUTOMATION_RESUMED, AUTOMATION_RUN_CANCEL, BILLING_PROFILE_UPDATED, BILLING_PAYMENT_METHOD_DISABLED, BILLING_REFUND_SUCCEEDED, BILLING_MANUAL_CHARGE, SUBSCRIPTION_CREATED, SUBSCRIPTION_CHANGED, SUBSCRIPTION_CANCEL_SCHEDULED, SUBSCRIPTION_RESUMED, EXTRA_USAGE_CONFIGURED, EXTRA_USAGE_ADJUSTED, PLATFORM_CONFIGURED, PLATFORM_ADJUSTED, EXTRA_USAGE_MEMBER_CAP_SET, EXTRA_USAGE_ALERT_THRESHOLDS_SET, COMPANY_SPEND_CAP_SET, TEAM_ANALYTICS_EXPORTED, TEAM_SPEND_EXPORTED, AI_BUDGET_MEMBER_SET, AI_BUDGET_MEMBER_RESET, SPEND_CAP_THRESHOLD_REACHED, SPEND_COMPANY_CAP_REACHED, PLAN_CREATED, PLAN_UPDATED, USAGE_RATE_ADDED, USER_TERMS_ACCEPTED, ACCOUNT_DELETION_CODE_SENT, ACCOUNT_DELETION_SCHEDULED, ACCOUNT_DELETION_CANCELLED, ACCOUNT_DELETED, ACCOUNT_EMAIL_CODE_SENT, ACCOUNT_EMAIL_BOUND, ACCOUNT_TELEGRAM_MERGED, ACCOUNT_GOOGLE_LINKED, ACCOUNT_TELEGRAM_MERGE_REFUSED, ADMIN_ADS_CONVERSIONS_RELEASED, ADMIN_ADS_CONVERSIONS_REJECTED, ADMIN_ADS_SIGNUPS_EXPORTED, ADMIN_ACCESS_SIGNED_IN, ADMIN_ACCESS_REFUSED, ADMIN_TWO_FACTOR_VERIFIED, ADMIN_TWO_FACTOR_ENABLE_REQUESTED, ADMIN_TWO_FACTOR_ENABLED, ADMIN_TWO_FACTOR_DISABLED, ADMIN_SESSION_SIGNED_IN, ADMIN_USER_BANNED, ADMIN_USER_UNBANNED, ADMIN_WORKSPACE_BLOCKED, ADMIN_WORKSPACE_UNBLOCKED, ADMIN_WORKSPACE_TRAINING_CONSENT, ADMIN_USER_PLATFORM_ROLES_CHANGED, ADMIN_USER_FREE_ELIGIBILITY_CHANGED, ADMIN_USER_LIMIT_RESETS_GRANTED, ADMIN_USER_LIMIT_RESETS_REVOKED, USAGE_LIMIT_RESET_APPLIED, REFERRAL_CLAIMED, REFERRAL_REWARDED, ADMIN_ENTERPRISE_REQUEST_STATUS_CHANGED, ADMIN_TRAINING_EXPORTED, ADMIN_SETTING_CHANGED, ADMIN_LOGS_PURGED, ADMIN_DIALOG_PD_VIEWED, ADMIN_DIALOG_LABEL_SET, ADMIN_DIALOG_LABEL_REMOVED, ADMIN_JOURNAL_PD_VIEWED, ADMIN_COMPANY_PD_VIEWED, ADMIN_COMPANY_PD_SEARCHED, ADMIN_PAYMENT_PD_VIEWED, SITE_POST_PUBLISHED, SITE_POST_UNPUBLISHED, SITE_POST_DELETED, SITE_LEGAL_PUBLISHED, SITE_TRACKERS_SAVED, CANARY_TRIGGERED, BILLING_PAYMENT_NEW, BILLING_PAYMENT_PENDING, BILLING_PAYMENT_REQUIRES_ACTION, BILLING_PAYMENT_AUTHORIZED, BILLING_PAYMENT_SUCCEEDED, BILLING_PAYMENT_VERIFIED, BILLING_PAYMENT_FAILED, BILLING_PAYMENT_CANCELLED, BILLING_PAYMENT_PARTIALLY_REFUNDED, BILLING_PAYMENT_REFUNDED)
     }
 }

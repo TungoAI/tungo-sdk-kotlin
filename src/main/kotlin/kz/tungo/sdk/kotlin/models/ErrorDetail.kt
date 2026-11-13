@@ -54,7 +54,12 @@ public data class ErrorDetail(
     @SerialName("allowed_methods")
     public val allowedMethods: List<ErrorDetailAllowedMethodItem>? = null,
     /**
-     * Уточнение вида: по нему выбирается действие интерфейса (кнопка «Пополнить», «Войти иначе»…). Нет поля — хватает type и message. Известные коды: - `sso_domain_taken` (409) — домен SSO уже подтверждён другой организацией -…
+     * При code = subscription_unpaid_debt — сколько оплатить, в тиынах: сумма всех неоплаченных счетов подписки.
+     */
+    @SerialName("amount_tiyn")
+    public val amountTiyn: Long? = null,
+    /**
+     * Уточнение вида: по нему выбирается действие интерфейса (кнопка «Пополнить», «Войти иначе»…). Нет поля — хватает type и message. Известные коды: - `cannot_ban_self` (409) — админка: закрыть вход самому себе нельзя - `user…
      */
     @SerialName("code")
     public val code: String? = null,
@@ -63,6 +68,19 @@ public data class ErrorDetail(
      */
     @SerialName("fields")
     public val fields: List<FieldError>? = null,
+    /**
+     * При code = free_limit_unavailable. Главная причина отказа в бесплатном лимите: `admin_decision` — решение администратора; `temporary_email` — учётная запись на временной почте; `hidden_email` — скрытая почта Apple; `emai…
+     */
+    @SerialName("free_blocked_reason")
+    public val freeBlockedReason: ErrorDetailFreeBlockedReason? = null,
+    /** Тот же срок моментом времени — ISO 8601, UTC: когда запрос можно повторить. */
+    @SerialName("next_request_at")
+    public val nextRequestAt: String? = null,
+    /**
+     * При code = subscription_unpaid_debt — платёж для кнопки «Оплатить» (…/billing/payments/{payment_id}/pay-form); null — вести к списку счетов.
+     */
+    @SerialName("payment_id")
+    public val paymentId: String? = null,
     /**
      * При code = missing_permission — какого права не хватает: права в компании (company.read, company.manage, company.members.manage, onec.connect, proposals.create, proposals.approve, chat.use, audit.read, automations.manage…
      */
@@ -78,6 +96,11 @@ public data class ErrorDetail(
      */
     @SerialName("resets_at")
     public val resetsAt: String? = null,
+    /**
+     * При отказе по частоте (429) на адресах экрана входа — через сколько секунд можно повторить (то же число, что в заголовке Retry-After). Показать таймер.
+     */
+    @SerialName("retry_after_seconds")
+    public val retryAfterSeconds: Long? = null,
     /**
      * При code = role_above_yours — ключ роли в компании, которую нельзя выдать или снять (например chief_accountant).
      */
@@ -95,22 +118,32 @@ internal class ErrorDetailFields(
     val type: ErrorDetailType,
     @SerialName("allowed_methods")
     val allowedMethods: List<ErrorDetailAllowedMethodItem>? = null,
+    @SerialName("amount_tiyn")
+    val amountTiyn: Long? = null,
     @SerialName("code")
     val code: String? = null,
     @SerialName("fields")
     val fields: List<FieldError>? = null,
+    @SerialName("free_blocked_reason")
+    val freeBlockedReason: ErrorDetailFreeBlockedReason? = null,
+    @SerialName("next_request_at")
+    val nextRequestAt: String? = null,
+    @SerialName("payment_id")
+    val paymentId: String? = null,
     @SerialName("permission")
     val permission: String? = null,
     @SerialName("permissions")
     val permissions: List<String>? = null,
     @SerialName("resets_at")
     val resetsAt: String? = null,
+    @SerialName("retry_after_seconds")
+    val retryAfterSeconds: Long? = null,
     @SerialName("role")
     val role: String? = null,
 )
 
 internal object ErrorDetailSerializer : KSerializer<ErrorDetail> {
-    private val known: Set<String> = setOf("message", "type", "allowed_methods", "code", "fields", "permission", "permissions", "resets_at", "role")
+    private val known: Set<String> = setOf("message", "type", "allowed_methods", "amount_tiyn", "code", "fields", "free_blocked_reason", "next_request_at", "payment_id", "permission", "permissions", "resets_at", "retry_after_seconds", "role")
 
     override val descriptor: SerialDescriptor = ErrorDetailFields.serializer().descriptor
 
@@ -122,11 +155,16 @@ internal object ErrorDetailSerializer : KSerializer<ErrorDetail> {
             message = fields.message,
             type = fields.type,
             allowedMethods = fields.allowedMethods,
+            amountTiyn = fields.amountTiyn,
             code = fields.code,
             fields = fields.fields,
+            freeBlockedReason = fields.freeBlockedReason,
+            nextRequestAt = fields.nextRequestAt,
+            paymentId = fields.paymentId,
             permission = fields.permission,
             permissions = fields.permissions,
             resetsAt = fields.resetsAt,
+            retryAfterSeconds = fields.retryAfterSeconds,
             role = fields.role,
             additionalProperties = json.filterKeys { it !in known },
         )
@@ -138,11 +176,16 @@ internal object ErrorDetailSerializer : KSerializer<ErrorDetail> {
             message = value.message,
             type = value.type,
             allowedMethods = value.allowedMethods,
+            amountTiyn = value.amountTiyn,
             code = value.code,
             fields = value.fields,
+            freeBlockedReason = value.freeBlockedReason,
+            nextRequestAt = value.nextRequestAt,
+            paymentId = value.paymentId,
             permission = value.permission,
             permissions = value.permissions,
             resetsAt = value.resetsAt,
+            retryAfterSeconds = value.retryAfterSeconds,
             role = value.role,
         )
         val declared = output.json.encodeToJsonElement(ErrorDetailFields.serializer(), fields) as JsonObject

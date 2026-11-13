@@ -36,7 +36,9 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 /** Новое название разговора */
 @Serializable
 public data class ChatDialogPatch(
-    /** Новое название, до 64 символов; пустая строка — вернуть заголовок по первому вопросу */
+    /**
+     * Новое название, до 64 символов; пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос)
+     */
     @SerialName("title")
     public val title: String,
 )

@@ -45,4 +45,9 @@ public data class PlatformAccountPurchaseLimits(
     /** Наименьшее пополнение в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
     @SerialName("min_tiyn")
     public val minTiyn: Long,
+    /**
+     * Сколько уже пополнено сегодня (сутки по Алматы; платежи без итога тоже в счёте) — тот же счёт, что у предела daily_max_tiyn в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+     */
+    @SerialName("today_tiyn")
+    public val todayTiyn: Long,
 )

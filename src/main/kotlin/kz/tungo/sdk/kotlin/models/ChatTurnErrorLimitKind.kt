@@ -34,7 +34,13 @@ import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
 /**
- * Только у code = budget: day — дневной лимит, dialog — лимит разговора
+ * Только у code = budget — почему ход остановлен:
+ * - `day` — дневной лимит человека исчерпан — продолжить завтра (по Алматы) или поднять лимит
+ * - `dialog` — лимит разговора исчерпан — начать новый разговор
+ * - `turn` — потолок расхода на один вопрос — уточнить или разбить вопрос
+ * - `plan` — лимит тарифа или доп. использования организации — ждать обновления лимита или поднять его в настройках оплаты
+ * - `disabled` — ИИ временно выключен на платформе — повторить позже
+ * - `meter` — расход не удалось проверить или записать — ход остановлен, чтобы не тратить вслепую; повторить позже
  *
  * An open enumeration: a value this version of the SDK does not know is kept as it is, see [isKnown].
  */
@@ -49,8 +55,12 @@ public value class ChatTurnErrorLimitKind(public val value: String) {
     public companion object {
         public val DAY: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("day")
         public val DIALOG: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("dialog")
+        public val TURN: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("turn")
+        public val PLAN: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("plan")
+        public val DISABLED: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("disabled")
+        public val METER: ChatTurnErrorLimitKind = ChatTurnErrorLimitKind("meter")
 
         /** The values known to this version of the SDK. */
-        public val entries: List<ChatTurnErrorLimitKind> = listOf(DAY, DIALOG)
+        public val entries: List<ChatTurnErrorLimitKind> = listOf(DAY, DIALOG, TURN, PLAN, DISABLED, METER)
     }
 }

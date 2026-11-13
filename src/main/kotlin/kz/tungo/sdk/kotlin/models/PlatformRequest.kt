@@ -48,6 +48,11 @@ public data class PlatformRequest(
     /** Компания из адреса (co_…); null — адрес не про компанию */
     @SerialName("company_id")
     public val companyId: String?,
+    /**
+     * Цена запроса в тиынах — сколько списано с баланса платформы за вызовы модели этого запроса (ход ИИ; у хода потоком — когда он закончится). null — запрос модель не вызывал; у запросов до появления этого поля тоже null
+     */
+    @SerialName("cost_tiyn")
+    public val costTiyn: Long?,
     /** Сколько шёл ответ, мс. У хода ИИ — до начала потока событий */
     @SerialName("duration_ms")
     public val durationMs: Long,

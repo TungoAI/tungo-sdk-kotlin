@@ -47,6 +47,11 @@ public data class ProposalHistoryEvent(
     /** Статус по-русски */
     @SerialName("status_title")
     public val statusTitle: String,
+    /**
+     * Машинная пометка шага, если есть: `approval_requested` — просили одобрить (статус при этом не менялся); `write_unknown`, `rejected_write_unknown`, `revert_unknown` — исход записи в 1С неизвестен
+     */
+    @SerialName("code")
+    public val code: String? = null,
     /** Пояснение: причина отклонения, комментарий к одобрению, текст ошибки записи */
     @SerialName("note")
     public val note: String? = null,

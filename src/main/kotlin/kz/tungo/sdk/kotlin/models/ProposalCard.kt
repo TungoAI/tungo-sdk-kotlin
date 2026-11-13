@@ -41,6 +41,8 @@ public data class ProposalCard(
     public val actions: List<ProposalAction>,
     @SerialName("approval")
     public val approval: ProposalApproval,
+    @SerialName("approval_request")
+    public val approvalRequest: ProposalApprovalRequest,
     /** Сколько блокеров: больше 0 — одобрить нельзя, нужен ответ человека в чате */
     @SerialName("blocker_count")
     public val blockerCount: Long,
@@ -53,7 +55,7 @@ public data class ProposalCard(
     @SerialName("created_at")
     public val createdAt: String,
     /**
-     * Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из чата (пачка, автоматизация, MCP)
+     * Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из разговора человека (пачка из ручки, автоматизация, MCP)
      */
     @SerialName("dialog_id")
     public val dialogId: String?,
@@ -91,6 +93,8 @@ public data class ProposalCard(
     /** Строки товаров и услуг; пусто у платёжек, кассовых ордеров и справочников */
     @SerialName("lines")
     public val lines: List<ProposalLine>,
+    @SerialName("origin")
+    public val origin: ProposalOrigin,
     /** Ожидаемые проводки — что получится в учёте после проведения */
     @SerialName("postings")
     public val postings: List<ProposalPosting>,
@@ -98,6 +102,11 @@ public data class ProposalCard(
     public val source: ProposalSource,
     @SerialName("status")
     public val status: ProposalStatus,
+    /**
+     * Причина отказа — у статусов rejected (отклонено) и failed (записать не удалось): последняя такая запись history. null — статус другой или причину не записали
+     */
+    @SerialName("status_reason")
+    public val statusReason: ProposalCardStatusReason?,
     /** Статус по-русски для показа (бейдж) */
     @SerialName("status_title")
     public val statusTitle: String,

@@ -48,10 +48,12 @@ public data class ChatDialogSummary(
     @SerialName("running")
     public val running: Boolean,
     /**
-     * Заголовок — первый вопрос одной строкой (до 64 знаков, длиннее — с «…»); вопрос из одних файлов — их имена
+     * Название одной строкой (до 64 знаков, длиннее — с «…»): человека, иначе от ИИ, иначе первый вопрос (вопрос из одних файлов — их имена). Откуда оно — title_source
      */
     @SerialName("title")
     public val title: String,
+    @SerialName("title_source")
+    public val titleSource: ChatTitleSource,
     /** Последнее изменение (у идущего хода — его начало), ISO 8601 UTC */
     @SerialName("updated_at")
     public val updatedAt: String,

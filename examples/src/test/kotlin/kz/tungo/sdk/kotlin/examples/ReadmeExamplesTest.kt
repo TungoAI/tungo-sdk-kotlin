@@ -43,12 +43,14 @@ class ReadmeExamplesTest {
 
     private fun proposal(id: String): String =
         """{"approval":{"allowed":true,"blocked_by_blockers":false},"blocker_count":0,"created_at":"2026-01-02T03:04:05Z",""" +
+            """"approval_request":{"can_request":false,"requested":null,"href":"/proposals/$id/request-approval"},""" +
             """"dialog_id":null,"href":"/proposals/$id","id":"$id","kind":"payment_out","kind_title":"Платёж","level":"manual",""" +
+            """"origin":{"source":"chat","dialog_id":null,"batch_id":null,"run_id":null},"status_reason":null,""" +
             """"level_title":"Вручную","line_count":1,"status":"draft","status_title":"Черновик","title":"Счёт","total":$money,""" +
             """"vat":$money,"warning_count":0}"""
 
     private fun proposals(next: String?, vararg ids: String): String =
-        """{"counts":{},"data":[${ids.joinToString(",") { proposal(it) }}],"next_cursor":${if (next == null) "null" else "\"$next\""},"total":${ids.size}}"""
+        """{"approval_requested_count":0,"counts":{},"data":[${ids.joinToString(",") { proposal(it) }}],"next_cursor":${if (next == null) "null" else "\"$next\""},"total":${ids.size}}"""
 
     private fun json(body: String, status: Int = 200): MockResponse =
         MockResponse().setResponseCode(status).setHeader("Content-Type", "application/json").setHeader("x-request-id", "req_1").setBody(body)

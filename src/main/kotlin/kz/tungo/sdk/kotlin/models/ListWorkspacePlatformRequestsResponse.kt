@@ -43,4 +43,12 @@ public data class ListWorkspacePlatformRequestsResponse(
      */
     @SerialName("next_cursor")
     public val nextCursor: String?,
+    /**
+     * Сколько всего записей под этими фильтрами (курсор не учитывается). Считается не дальше 10 000: если записей больше — здесь 10 000 и total_more = true
+     */
+    @SerialName("total")
+    public val total: Long,
+    /** true — записей больше, чем total: писать «больше 10 000», а не точное число */
+    @SerialName("total_more")
+    public val totalMore: Boolean,
 )

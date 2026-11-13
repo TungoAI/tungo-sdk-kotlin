@@ -49,6 +49,16 @@ public data class ChatMessageRequest(
     /** Продолжить разговор с этим id. Без него — новый разговор, его id придёт в заголовке X-Dialog-Id */
     @SerialName("dialog_id")
     public val dialogId: NullableField<String> = NullableField.Absent,
+    /**
+     * Усилие ИИ на этот вопрос: low < medium < high < xhigh < max — глубже думает, дольше и дороже (больше расход лимита). Не прислано или null — усилие выбирает Tungo. Только на тарифе с выбором усилия (max_effort тарифа в GE…
+     */
+    @SerialName("effort")
+    public val effort: NullableField<ChatMessageRequestEffort> = NullableField.Absent,
+    /**
+     * Упоминания через «@» в этом вопросе, до 10: ИИ получит их вместе с вопросом. Каждое проверяется на доступ: нет объекта в этой компании или нет права его видеть — 404 (error.code = mention_not_found, error.index — номер в…
+     */
+    @SerialName("mentions")
+    public val mentions: List<ChatMention>? = null,
     /** Вопрос человека, до 4000 знаков; можно не писать, если приложены файлы */
     @SerialName("message")
     public val message: String? = null,

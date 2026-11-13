@@ -44,4 +44,6 @@ public data class ChatDialogRenamed(
     /** Название разговора теперь */
     @SerialName("title")
     public val title: String,
+    @SerialName("title_source")
+    public val titleSource: ChatTitleSource,
 )

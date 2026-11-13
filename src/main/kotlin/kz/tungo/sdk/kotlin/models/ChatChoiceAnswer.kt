@@ -36,7 +36,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 /** Ответ на один вопрос из события choice */
 @Serializable
 public data class ChatChoiceAnswer(
-    /** Свой ответ текстом (вариант «свой ответ»). Нужен selected или other — хотя бы одно */
+    /** Свой ответ текстом (вариант «свой ответ»). Нужен selected или other — хотя бы одно (или skipped) */
     @SerialName("other")
     public val other: String? = null,
     /**
@@ -44,4 +44,9 @@ public data class ChatChoiceAnswer(
      */
     @SerialName("selected")
     public val selected: List<String>? = null,
+    /**
+     * true — «Пропустить»: вопрос оставлен без ответа, selected и other не передавать. ИИ узнаёт, что вопрос пропущен, и продолжает без этого ответа. У вопроса-подтверждения действия пропуск равен отказу: действие не выполняет…
+     */
+    @SerialName("skipped")
+    public val skipped: Boolean? = null,
 )

@@ -40,11 +40,6 @@ public data class ApiKeyCreate(
     @SerialName("name")
     public val name: String,
     /**
-     * Права ключа (1–20): `company.read` — читать данные компаний (добавляется всегда, даже если не передано); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобр…
-     */
-    @SerialName("permissions")
-    public val permissions: List<String>,
-    /**
      * Ключ на все компании организации, в том числе будущие: список company_ids не передаётся. Ключ видит те компании, где его создатель состоит сейчас, и в каждой — не шире его текущей роли. По умолчанию false
      */
     @SerialName("all_companies")
@@ -69,6 +64,16 @@ public data class ApiKeyCreate(
      */
     @SerialName("monthly_cap_tiyn")
     public val monthlyCapTiyn: Long? = null,
+    /**
+     * Ключ без доступа к компаниям и их 1С: ни одной компании он не видит — ни сейчас, ни будущих; company_ids и all_companies не передаются, права — только company.read (он ничего не открывает). По умолчанию false
+     */
+    @SerialName("no_companies")
+    public val noCompanies: Boolean? = null,
+    /**
+     * Права ключа (1–20): `company.read` — читать данные компаний (добавляется всегда, даже если не передано); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобр…
+     */
+    @SerialName("permissions")
+    public val permissions: List<String>? = null,
     /**
      * Предел записи в 1С по ключу: какие виды документов ключ может одобрять (как kinds правила автоодобрения: sale, purchase, bank_receipt, bank_payment, counterparty, contract, inventory_writeoff, cash_order_in, cash_order_o…
      */

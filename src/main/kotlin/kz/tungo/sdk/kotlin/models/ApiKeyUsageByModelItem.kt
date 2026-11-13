@@ -38,7 +38,7 @@ public data class ApiKeyUsageByModelItem(
     /** Стоимость в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸) */
     @SerialName("cost_tiyn")
     public val costTiyn: Long,
-    /** Модель ИИ (техническое имя) */
+    /** Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search, tungo-legacy) */
     @SerialName("model")
     public val model: String,
     /** Сколько вызовов ИИ */

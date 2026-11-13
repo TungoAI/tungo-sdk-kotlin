@@ -33,12 +33,16 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Вопрос ИИ к человеку */
+/**
+ * Вопрос ИИ к человеку. Уточнение, которое ещё ждёт ответа, сюда не попадает — оно приходит только полем awaiting разговора, чтобы экран не показал его дважды
+ */
 @Serializable
 public data class ChatHistoryQuestion(
     /** Вопрос */
     @SerialName("text")
     public val text: String,
+    @SerialName("answer")
+    public val answer: ChatHistoryQuestionAnswer? = null,
     /** Вопрос ИИ */
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     @SerialName("kind")

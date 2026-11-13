@@ -3,7 +3,7 @@ package kz.tungo.sdk.kotlin
 /** Build constants of the Tungo SDK for Kotlin. */
 public object TungoSdk {
     /** Version of this library. It is sent in the User-Agent header of every request. */
-    public const val VERSION: String = "0.2.0" // x-release-version
+    public const val VERSION: String = "0.3.0" // x-release-version
 
     /** Production host of the Tungo Platform API. */
     public const val DEFAULT_BASE_URL: String = "https://api.tungo.kz"

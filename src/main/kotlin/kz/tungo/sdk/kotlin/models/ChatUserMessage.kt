@@ -48,6 +48,9 @@ public data class ChatUserMessage(
     /** Приложенные файлы, если были */
     @SerialName("attachments")
     public val attachments: List<ChatAttachmentMeta>? = null,
+    /** Упоминания через «@» в этом вопросе, если были: вид, id и название на момент отправки */
+    @SerialName("mentions")
+    public val mentions: List<ChatHistoryMention>? = null,
     /**
      * Вопрос идущего хода: ответа ещё нет, его дочитывают потоком (GET …/chat/{id}/events?turn=). Только у последнего сообщения
      */

@@ -37,7 +37,12 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 @Serializable
 public data class ProposalPage(
     /**
-     * Сколько предложений в каждом статусе (ключ — ProposalStatus), без учёта фильтра — для бейджей вкладок; статусов без предложений нет
+     * Сколько предложений ждёт решения по просьбе («Отправить на одобрение») — в тех же пределах, что counts
+     */
+    @SerialName("approval_requested_count")
+    public val approvalRequestedCount: Long,
+    /**
+     * Сколько предложений в каждом статусе (ключ — ProposalStatus) — для бейджей вкладок; статусов без предложений нет. Считается в пределах source и batch_id (откуда и из какой пачки), остальные фильтры (status, kind, даты, q…
      */
     @SerialName("counts")
     public val counts: Map<String, Double>,

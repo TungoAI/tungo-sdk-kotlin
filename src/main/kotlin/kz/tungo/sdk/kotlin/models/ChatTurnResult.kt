@@ -50,6 +50,14 @@ public data class ChatTurnResult(
     /** Ошибки хода (как error в событии error); пусто — без ошибок */
     @SerialName("errors")
     public val errors: List<ChatTurnError>,
+    /**
+     * Вопросы-продолжения под ответом, до 3, на языке разговора: нажатие — обычный новый вопрос с этим текстом. Пусто — предложить нечего
+     */
+    @SerialName("followups")
+    public val followups: List<String>,
+    /** Предложенное следующее действие; null — нет */
+    @SerialName("next_action")
+    public val nextAction: ChatNextAction?,
     /** Открытый уточняющий вопрос: ответ — POST …/chat/{dialog_id}/answer; null — вопроса нет */
     @SerialName("pending_question")
     public val pendingQuestion: ChatPendingQuestion?,

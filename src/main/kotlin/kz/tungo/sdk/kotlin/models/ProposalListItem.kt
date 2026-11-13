@@ -38,6 +38,8 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 public data class ProposalListItem(
     @SerialName("approval")
     public val approval: ProposalApproval,
+    @SerialName("approval_request")
+    public val approvalRequest: ProposalApprovalRequest,
     /** Сколько блокеров: больше 0 — одобрить нельзя, нужен ответ человека в чате */
     @SerialName("blocker_count")
     public val blockerCount: Long,
@@ -45,7 +47,7 @@ public data class ProposalListItem(
     @SerialName("created_at")
     public val createdAt: String,
     /**
-     * Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из чата (пачка, автоматизация, MCP)
+     * Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из разговора человека (пачка из ручки, автоматизация, MCP)
      */
     @SerialName("dialog_id")
     public val dialogId: String?,
@@ -70,8 +72,15 @@ public data class ProposalListItem(
     /** Сколько строк товаров и услуг в документе; 0 у платёжек и справочников */
     @SerialName("line_count")
     public val lineCount: Long,
+    @SerialName("origin")
+    public val origin: ProposalOrigin,
     @SerialName("status")
     public val status: ProposalStatus,
+    /**
+     * Причина отказа — у статусов rejected (отклонено) и failed (записать не удалось): последняя такая запись history. null — статус другой или причину не записали
+     */
+    @SerialName("status_reason")
+    public val statusReason: ProposalListItemStatusReason?,
     /** Статус по-русски для показа (бейдж) */
     @SerialName("status_title")
     public val statusTitle: String,

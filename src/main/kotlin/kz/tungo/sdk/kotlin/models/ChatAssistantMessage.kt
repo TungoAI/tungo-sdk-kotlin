@@ -45,9 +45,17 @@ public data class ChatAssistantMessage(
     /** Источники ответа */
     @SerialName("citations")
     public val citations: List<ChatCitation>,
+    /**
+     * Вопросы-продолжения под ответом, до 3, на языке разговора: нажатие — обычный новый вопрос с этим текстом. Пусто — предложить нечего
+     */
+    @SerialName("followups")
+    public val followups: List<String>,
     /** Устойчивый id сообщения: <dialog_id>:<номер хода>:a */
     @SerialName("id")
     public val id: String,
+    /** Предложенное следующее действие; null — нет */
+    @SerialName("next_action")
+    public val nextAction: ChatNextAction?,
     /** Номера предложений этого хода — то же, что proposal-блоки, списком */
     @SerialName("proposal_ids")
     public val proposalIds: List<String>,
