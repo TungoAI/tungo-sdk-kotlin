@@ -290,6 +290,14 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
             val pending = ArrayList<ServerSentEvent>()
             val chunk = ByteArray(8192)
             val finished = AtomicBoolean(false)
+            suspend fun emitPending() {
+                for (event in pending) {
+                    if (event.data.isEmpty()) continue // keep-alive (the "ping" event of the API)
+                    if (!accepts(kind, event, status, headers)) continue
+                    emit(decodeEvent(deserializer, kind, event, status, headers))
+                }
+                pending.clear()
+            }
             coroutineScope {
                 val watcher = launch(start = CoroutineStart.UNDISPATCHED) {
                     try {
@@ -308,14 +316,12 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
                         }
                         if (count < 0) break
                         parser.feed(chunk, 0, count, pending)
-                        for (event in pending) {
-                            if (event.data.isEmpty()) continue // keep-alive (the "ping" event of the API)
-                            if (!accepts(kind, event, status, headers)) continue
-                            emit(decodeEvent(deserializer, kind, event, status, headers))
-                        }
-                        pending.clear()
+                        emitPending()
                     }
+                    // end() completes a line held back for a possible CRLF, so a stream whose last
+                    // byte is a bare CR still dispatches its last event (typically "done").
                     parser.end(pending)
+                    emitPending()
                     finished.set(true)
                 } finally {
                     watcher.cancel()

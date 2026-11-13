@@ -130,6 +130,23 @@ class StreamingAndPaginationTest {
     }
 
     @Test
+    fun aStreamThatEndsWithABareCarriageReturnStillDeliversItsLastEvent() = runBlocking<Unit> {
+        // The parser holds a final CR back in case an LF follows; the end of the stream completes
+        // that line, and the event it dispatches must still reach the collector.
+        for (ending in listOf("\r\r", "\n\r")) {
+            MockApi().use { api ->
+                api.enqueueSse(
+                    "event: text\rdata: {\"type\":\"text\",\"delta\":\"a\",\"step\":1}\r\r" +
+                        "event: done\rdata: {\"type\":\"done\",\"stop_reason\":\"end_turn\",\"cost_tiyn\":7}" + ending,
+                )
+                val events = api.client().chat.createStream(ChatMessageRequest(message = "q")).toList()
+                assertEquals(listOf("text", "done"), events.map { it.type }, "ending ${ending.replace("\r", "CR").replace("\n", "LF")}")
+                assertEquals(7L, assertIs<ChatEventDone>(events[1]).costTiyn)
+            }
+        }
+    }
+
+    @Test
     fun theRawStreamExposesHeadersAndAccumulates() = runBlocking<Unit> {
         MockApi().use { api ->
             api.enqueueSse(Fixtures.SSE_TWO_TEXTS, "X-Dialog-Id" to "d_1", "X-Turn-No" to "4", "x-request-id" to "req_s")
