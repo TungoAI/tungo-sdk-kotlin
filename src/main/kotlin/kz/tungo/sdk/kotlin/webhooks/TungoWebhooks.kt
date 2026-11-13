@@ -124,8 +124,9 @@ public object TungoWebhooks {
     }
 
     private fun checkSignature(body: ByteArray, secret: String, tolerance: Duration, clock: () -> Long, header: (String) -> String?) {
-        if (!tolerance.isPositive()) {
-            throw WebhookVerificationException(Reason.INVALID_TOLERANCE, "The timestamp tolerance must be positive")
+        // Duration.INFINITE would turn the replay check off, so it is as invalid as zero.
+        if (!tolerance.isPositive() || tolerance.isInfinite()) {
+            throw WebhookVerificationException(Reason.INVALID_TOLERANCE, "The timestamp tolerance must be positive and finite")
         }
         val encoded = secret.removePrefix(SECRET_PREFIX)
         val key: ByteString? = if (encoded.isEmpty()) null else encoded.decodeBase64()

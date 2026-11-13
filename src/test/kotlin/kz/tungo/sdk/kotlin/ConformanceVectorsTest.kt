@@ -12,6 +12,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonNull
@@ -89,6 +90,17 @@ class ConformanceVectorsTest {
                 assertFalse(case.str("secret").isNotEmpty() && case.str("secret") in error.message.orEmpty(), case.caseName)
             }
         }
+    }
+
+    @Test
+    fun infiniteToleranceIsInvalid() {
+        // JSON cannot hold infinity, so this case lives here instead of in the vectors: an
+        // infinite tolerance would turn the replay check off, which must be impossible.
+        val case = Vectors.cases("webhook_verification", "cases").first { it.obj("expect").flag("valid") }
+        val error = assertFailsWith<WebhookVerificationException> {
+            TungoWebhooks.verify(case.str("body"), case.stringMap("headers"), case.str("secret"), Duration.INFINITE) { 1_000_000_000_000L }
+        }
+        assertEquals(WebhookVerificationException.Reason.INVALID_TOLERANCE, error.reason)
     }
 
     // ---- hook_signature ----
