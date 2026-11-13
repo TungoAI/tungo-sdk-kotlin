@@ -50,6 +50,11 @@ public data class ChatEventDone(
     @SerialName("cost_tiyn")
     public val costTiyn: Long? = null,
     /**
+     * Пора предложить человеку оценить разговор — те же правила, что у rating_prompt в GET …/chat/{id}. Поля нет — не предлагать. Ключу API не приходит
+     */
+    @SerialName("rating_prompt")
+    public val ratingPrompt: Boolean? = null,
+    /**
      * Чем кончился ход: end_turn — ответ готов; awaiting_user — ждёт ответа на вопрос choice; budget — кончился лимит; aborted — остановили; refusal — модель отказалась; context_overflow — разговор слишком длинный; max_iterati…
      */
     @SerialName("stop_reason")

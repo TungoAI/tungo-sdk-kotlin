@@ -33,23 +33,58 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Источник ответа: норма закона, статья базы знаний */
+/**
+ * Источник ответа: норма закона, статья базы знаний. Приходят по порядку первой ссылки в тексте, каждый источник один раз за ход. Вопросы-продолжения — отдельное событие next
+ */
 @Serializable
 public data class ChatEventCitation(
-    /** Откуда: код нормы или статьи базы знаний */
+    /**
+     * Документ коротко: принятое сокращение, если оно есть в базе («НК РК»), иначе название обычным регистром («Социальный кодекс Республики Казахстан»)
+     */
+    @SerialName("document")
+    public val document: String,
+    /** Короткая подпись для чипа: документ и место в нём, без редакции и пометок */
+    @SerialName("label")
+    public val label: String,
+    /**
+     * Подпись целиком, как раньше: документ, место, редакция и пометки одной строкой. Для показа удобнее label, edition и note по отдельности
+     */
     @SerialName("source")
     public val source: String,
-    /** Название источника */
+    /** Заголовок статьи целиком, с «Статья N.» (как раньше). Без номера — heading */
     @SerialName("title")
     public val title: String,
-    /** Редакция нормы */
+    /** Номер статьи */
+    @SerialName("article")
+    public val article: String? = null,
+    /** Номер главы — у источников без статей */
+    @SerialName("chapter")
+    public val chapter: String? = null,
+    /** Редакция нормы словами */
     @SerialName("edition")
     public val edition: String? = null,
+    /** Дата начала редакции, ГГГГ-ММ-ДД */
+    @SerialName("edition_date")
+    public val editionDate: String? = null,
+    /** Заголовок статьи без «Статья N.» — вторая строка чипа или подсказка */
+    @SerialName("heading")
+    public val heading: String? = null,
+    /**
+     * Пометка о статусе или природе источника — показывать обязательно: «УТРАТИЛА СИЛУ с 01.01.2026», «по разъяснению КГД», «позиция органа (не норма права)»
+     */
+    @SerialName("note")
+    public val note: String? = null,
+    /** Номер пункта */
+    @SerialName("point")
+    public val point: String? = null,
+    /** Номер подпункта */
+    @SerialName("subpoint")
+    public val subpoint: String? = null,
     /** Вид события: citation */
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     @SerialName("type")
     override val type: String = "citation",
-    /** Ссылка на текст источника */
+    /** Ссылка на текст источника: по ней источник открывают. Она же — ключ источника внутри ответа */
     @SerialName("url")
     public val url: String? = null,
 ) : ChatEvent

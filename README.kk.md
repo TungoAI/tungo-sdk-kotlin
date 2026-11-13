@@ -274,7 +274,7 @@ println(TungoMoney.isValidBinIin("990140000017"))
 
 ## API анықтамалығы
 
-Tungo платформасы API-інің келісімшартынан жасалған: **ресурстар — 13, әдістер — 85, вебхук оқиғаларының түрлері — 22**.
+Tungo платформасы API-інің келісімшартынан жасалған: **ресурстар — 13, әдістер — 90, вебхук оқиғаларының түрлері — 22**.
 
 | Ресурс | Сипаттама | Әдістер |
 | --- | --- | --- |
@@ -283,7 +283,7 @@ Tungo платформасы API-інің келісімшартынан жас�
 | `client.platform` | Платформа балансы, қозғалыстар кітабы, шығын есептері, лимиттер, аудит және модельдер тарифтері | `listUsageRates` · `getAccount` · `getAudit / getAuditAll` · `getLedger / getLedgerAll` · `listLimits` · `listRequests / listRequestsAll` · `getUsage` |
 | `client.apiKeys` | Ағымдағы API кілті туралы мәлімет және оның шығын статистикасы | `getCurrent` · `getCurrentUsage` · `getUsage` |
 | `client.webhooks` | Ұйымның шығыс вебхуктары (Svix): мекенжайлар, оқиғалар каталогы, жеткізулер және қолтаңбаны тексеру | `listEndpoints / listEndpointsAll` · `createEndpoint` · `getEndpoint` · `updateEndpoint` · `deleteEndpoint` · `listEndpointAttempts / listEndpointAttemptsAll` · `rotateEndpointSecret` · `testEndpoint` · `listEventTypes` · `listMessages / listMessagesAll` · `listMessageAttempts / listMessageAttemptsAll` · `resendMessage` · `getUsage` |
-| `client.chat` | ЖИ-бухгалтермен диалогтар: сұрақтар, ағынды чат (SSE), токендерді санау және тарих | `list / listAll` · `create / createStream` · `countTokens` · `listMentions` · `listSuggestions` · `get` · `update` · `delete` · `answer / answerStream` · `listEvents` · `stop` |
+| `client.chat` | ЖИ-бухгалтермен диалогтар: сұрақтар, ағынды чат (SSE), токендерді санау және тарих | `list / listAll` · `create / createStream` · `countTokens` · `listMentions` · `getRatingOptions` · `listSuggestions` · `get` · `update` · `delete` · `answer / answerStream` · `listEvents` · `rateMessage` · `deleteMessageRating` · `rate` · `dismissRating` · `stop` |
 | `client.proposals` | ЖИ-бухгалтер ұсынған құжаттар: қарау, 1С-ке жазуды мақұлдау және қабылдамау | `list / listAll` · `approveBatch` · `get` · `approve` · `reject` · `requestApproval` |
 | `client.feed` | Компанияның оқиғалар мен ұсыныстар таспасы (беттер және тікелей SSE ағыны) | `get / getAll` · `listEvents` |
 | `client.batches` | Банк үзінді көшірмелерін, кіріс ЭШФ-ларды және DirectBank-ті өңдеу бумалары | `list / listAll` · `createBankStatement` · `createEsfPurchases` · `get` · `listEvents` · `stop` · `getSummary` · `listStatements / listStatementsAll` · `pollDirectbank` |

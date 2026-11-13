@@ -59,12 +59,20 @@ public data class ChatAssistantMessage(
     /** Номера предложений этого хода — то же, что proposal-блоки, списком */
     @SerialName("proposal_ids")
     public val proposalIds: List<String>,
+    /** Оценка этого ответа человеком; null — не оценён */
+    @SerialName("rating")
+    public val rating: ChatMessageRating?,
     /** done — ход закончился сам; stopped — нажали «Стоп»; error — ошибка, отказ модели или предел шагов */
     @SerialName("state")
     public val state: ChatAssistantMessageState,
     /** Размышления модели за ход одним текстом; пусто — не было */
     @SerialName("thinking")
     public val thinking: String,
+    /**
+     * Номер ответа в разговоре (он же X-Turn-No и средняя часть id): по нему ответ оценивают — PUT …/chat/{id}/messages/{turn}/rating
+     */
+    @SerialName("turn_no")
+    public val turnNo: Long,
     /** Ответ ИИ */
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     @SerialName("role")

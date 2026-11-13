@@ -164,6 +164,23 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
         withRawResponse.listMentions(limit, q, types, companyId, requestOptions).body
 
     /**
+     * Что нужно форме оценки: причины «вниз» и предел комментария
+     *
+     * `GET /v1/companies/{co}/chat/rating-options`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param lang Язык названий причин; по умолчанию ru
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun getRatingOptions(
+        lang: ListCompanyChatRatingOptionsLang? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatRatingOptions =
+        withRawResponse.getRatingOptions(lang, companyId, requestOptions).body
+
+    /**
      * Подсказки пустого чата
      *
      * `GET /v1/companies/{co}/chat/suggestions`
@@ -297,6 +314,82 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
     ): Flow<ChatEvent> = flow {
         withRawResponse.listEvents(id, turn, companyId, requestOptions) { emitAll(it.events) }
     }
+
+    /**
+     * Оценить ответ ИИ: палец вверх или вниз
+     *
+     * `PUT /v1/companies/{co}/chat/{id}/messages/{turn}/rating`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+     * @param turn Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
+     * @param body the request body
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun rateMessage(
+        id: String,
+        turn: String,
+        body: ChatMessageRatingBody,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatMessageRated =
+        withRawResponse.rateMessage(id, turn, body, companyId, requestOptions).body
+
+    /**
+     * Снять свою оценку ответа
+     *
+     * `DELETE /v1/companies/{co}/chat/{id}/messages/{turn}/rating`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+     * @param turn Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun deleteMessageRating(
+        id: String,
+        turn: String,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatMessageRated =
+        withRawResponse.deleteMessageRating(id, turn, companyId, requestOptions).body
+
+    /**
+     * Оценить разговор целиком: от 1 до 5
+     *
+     * `PUT /v1/companies/{co}/chat/{id}/rating`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+     * @param body the request body
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun rate(
+        id: String,
+        body: ChatDialogRatingBody,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatDialogRated =
+        withRawResponse.rate(id, body, companyId, requestOptions).body
+
+    /**
+     * Не сейчас: закрыть предложение оценить разговор
+     *
+     * `POST /v1/companies/{co}/chat/{id}/rating/dismiss`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun dismissRating(
+        id: String,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatRatingDismissed =
+        withRawResponse.dismissRating(id, companyId, requestOptions).body
 
     /**
      * Остановить ход или закрыть открытый вопрос
@@ -434,6 +527,32 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
                 ),
                 requestOptions,
                 ChatMentionSearch.serializer(),
+            )
+
+        /**
+         * Что нужно форме оценки: причины «вниз» и предел комментария
+         *
+         * `GET /v1/companies/{co}/chat/rating-options`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param lang Язык названий причин; по умолчанию ru
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun getRatingOptions(
+            lang: ListCompanyChatRatingOptionsLang? = null,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatRatingOptions> =
+            engine.json(
+                RequestSpec(
+                    method = "GET",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/rating-options",
+                    auth = AuthMode.KEY,
+                    query = QueryBuilder().add("lang", lang?.value),
+                ),
+                requestOptions,
+                ChatRatingOptions.serializer(),
             )
 
         /**
@@ -637,6 +756,116 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
                 ChatEvent.serializer(),
                 StreamKind.union { ChatEvent.Unknown("error", it) },
                 block,
+            )
+
+        /**
+         * Оценить ответ ИИ: палец вверх или вниз
+         *
+         * `PUT /v1/companies/{co}/chat/{id}/messages/{turn}/rating`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+         * @param turn Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
+         * @param body the request body
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun rateMessage(
+            id: String,
+            turn: String,
+            body: ChatMessageRatingBody,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatMessageRated> =
+            engine.json(
+                RequestSpec(
+                    method = "PUT",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/" + pathSegment("id", id) + "/messages/" + pathSegment("turn", turn) + "/rating",
+                    auth = AuthMode.KEY,
+                    payload = engine.jsonPayload(ChatMessageRatingBody.serializer(), body),
+                ),
+                requestOptions,
+                ChatMessageRated.serializer(),
+            )
+
+        /**
+         * Снять свою оценку ответа
+         *
+         * `DELETE /v1/companies/{co}/chat/{id}/messages/{turn}/rating`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+         * @param turn Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun deleteMessageRating(
+            id: String,
+            turn: String,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatMessageRated> =
+            engine.json(
+                RequestSpec(
+                    method = "DELETE",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/" + pathSegment("id", id) + "/messages/" + pathSegment("turn", turn) + "/rating",
+                    auth = AuthMode.KEY,
+                ),
+                requestOptions,
+                ChatMessageRated.serializer(),
+            )
+
+        /**
+         * Оценить разговор целиком: от 1 до 5
+         *
+         * `PUT /v1/companies/{co}/chat/{id}/rating`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+         * @param body the request body
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun rate(
+            id: String,
+            body: ChatDialogRatingBody,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatDialogRated> =
+            engine.json(
+                RequestSpec(
+                    method = "PUT",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/" + pathSegment("id", id) + "/rating",
+                    auth = AuthMode.KEY,
+                    payload = engine.jsonPayload(ChatDialogRatingBody.serializer(), body),
+                ),
+                requestOptions,
+                ChatDialogRated.serializer(),
+            )
+
+        /**
+         * Не сейчас: закрыть предложение оценить разговор
+         *
+         * `POST /v1/companies/{co}/chat/{id}/rating/dismiss`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun dismissRating(
+            id: String,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatRatingDismissed> =
+            engine.json(
+                RequestSpec(
+                    method = "POST",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/" + pathSegment("id", id) + "/rating/dismiss",
+                    auth = AuthMode.KEY,
+                ),
+                requestOptions,
+                ChatRatingDismissed.serializer(),
             )
 
         /**

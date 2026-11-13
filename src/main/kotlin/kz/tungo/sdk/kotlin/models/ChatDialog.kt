@@ -60,6 +60,14 @@ public data class ChatDialog(
      */
     @SerialName("pd_restored")
     public val pdRestored: Boolean,
+    /** Оценка разговора человеком; null — не оценён */
+    @SerialName("rating")
+    public val rating: ChatDialogRating?,
+    /**
+     * true — пора предложить человеку оценить разговор (форма 1–5 с комментарием). Решает ядро по настройке: достаточно ответов ИИ в разговоре, разговор не оценён, человек не нажимал «не сейчас», и ему не предлагали в последни…
+     */
+    @SerialName("rating_prompt")
+    public val ratingPrompt: Boolean,
     /** true — идёт ход: дочитать его потоком GET …/chat/{id}/events?turn=<turn> */
     @SerialName("running")
     public val running: Boolean,
