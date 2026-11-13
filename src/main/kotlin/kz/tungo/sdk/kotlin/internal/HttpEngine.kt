@@ -500,7 +500,7 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
 
         /**
          * Turns a replayed ChatTurnResult into the event stream of the turn it stands for: text
-         * (the answer), proposal, question, citation, error and choice events, then done. The
+         * (the answer), proposal, question, citation, error, choice and next events, then done. The
          * dialog id and the turn number, which a replay carries only in the body, become the
          * X-Dialog-Id and X-Turn-No headers when they are missing. Returns null when the body is
          * not a chat turn result.
@@ -544,6 +544,11 @@ internal class HttpEngine(val options: TungoClientOptions, baseClient: OkHttpCli
                 emit("choice", pending)
                 pending["choice_id"]?.let { done["choice_id"] = it }
             }
+            // A live turn ends its finished answer with next right before done; the stored result
+            // keeps it as followups and next_action.
+            val followups = result["followups"] as? JsonArray ?: JsonArray(emptyList())
+            val action = result["next_action"] as? JsonObject
+            if (followups.isNotEmpty() || action != null) emit("next", mapOf("followups" to followups, "action" to (action ?: JsonNull)))
             emit("done", done)
             return builder.body(out.toString().toResponseBody(null)).build()
         }

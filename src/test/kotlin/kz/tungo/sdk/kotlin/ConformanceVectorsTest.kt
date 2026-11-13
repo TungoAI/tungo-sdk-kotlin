@@ -44,6 +44,7 @@ import kz.tungo.sdk.kotlin.internal.Retry
 import kz.tungo.sdk.kotlin.internal.SseParser
 import kz.tungo.sdk.kotlin.internal.pathSegment
 import kz.tungo.sdk.kotlin.models.ChatEvent
+import kz.tungo.sdk.kotlin.models.ChatEventNext
 import kz.tungo.sdk.kotlin.models.ChatMessageRequest
 import kz.tungo.sdk.kotlin.resources.ChatStreamAccumulator
 import kz.tungo.sdk.kotlin.resources.dialogId
@@ -536,6 +537,7 @@ class ConformanceVectorsTest {
                 // The raw stream: every event is delivered as a typed event, errors included.
                 enqueue()
                 val types = ArrayList<String>()
+                val nexts = ArrayList<ChatEventNext>()
                 val accumulator = ChatStreamAccumulator()
                 client.chat.withRawResponse.createStream(ChatMessageRequest(message = "q")) { stream ->
                     assertEquals(expect.strOrNull("dialog_id"), stream.dialogId, name)
@@ -543,10 +545,25 @@ class ConformanceVectorsTest {
                     stream.events.collect { event: ChatEvent ->
                         types.add(event.type)
                         accumulator.add(event)
+                        if (event is ChatEventNext) nexts.add(event)
                     }
                 }
                 assertEquals(expect.getValue("event_count").jsonPrimitive.int, accumulator.eventCount, name)
                 expect["event_types"]?.jsonArray?.let { wanted -> assertEquals(wanted.map { it.jsonPrimitive.content }, types, name) }
+                (expect["next"] as? JsonObject)?.let { wanted ->
+                    assertEquals(1, nexts.size, name)
+                    val got = nexts.single()
+                    assertEquals(wanted.getValue("followups").jsonArray.map { it.jsonPrimitive.content }, got.followups, name)
+                    val action = wanted["action"] as? JsonObject
+                    if (action == null) {
+                        assertNull(got.action, name)
+                    } else {
+                        val gotAction = assertNotNull(got.action, name)
+                        assertEquals(action.str("code"), gotAction.code.value, name)
+                        assertEquals(action.str("prompt"), gotAction.prompt, name)
+                        assertEquals(action.getValue("params").jsonObject, JsonObject(gotAction.params.mapValues { it.value.json }), name)
+                    }
+                }
                 assertEquals(expect.str("text"), accumulator.text, name)
                 assertEquals(expect.strOrNull("stop_reason"), accumulator.stopReason, name)
                 assertEquals(expect.strOrNull("choice_id"), accumulator.choiceId, name)
