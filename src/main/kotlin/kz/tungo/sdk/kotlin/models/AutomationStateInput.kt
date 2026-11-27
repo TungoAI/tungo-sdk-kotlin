@@ -37,7 +37,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 @Serializable
 public data class AutomationStateInput(
     /**
-     * true — поставить все автоматизации компании на паузу: новые запуски не начинаются (идущий доводит текущий шаг, остановить его — POST …/runs/{id}/cancel), события хуков принимаются и ждут в очереди; false — снять паузу (п…
+     * true — поставить все автоматизации компании на паузу: новые запуски не начинаются (идущий доводит текущий шаг и ждёт снятия паузы в очереди, потом продолжит со следующего шага; остановить его совсем — POST …/runs/{id}/ca…
      */
     @SerialName("paused")
     public val paused: Boolean,

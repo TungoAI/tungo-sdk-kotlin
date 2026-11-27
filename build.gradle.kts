@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "kz.tungo"
-version = "0.3.0" // x-release-version
+version = "1.0.0" // x-release-version
 
 repositories {
     mavenCentral()

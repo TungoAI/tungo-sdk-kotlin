@@ -34,7 +34,7 @@ import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
 /**
- * Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; snapshot — загруженная копия базы, только чтение; fake — только в тестах
+ * Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; module — через расширение «Tungo в 1С», пока у человека открыта 1С; snapshot — загруженная копия базы, только чтение; fake — только в тестах
  *
  * An open enumeration: a value this version of the SDK does not know is kept as it is, see [isKnown].
  */
@@ -51,8 +51,9 @@ public value class OneCGateway(public val value: String) {
         public val SNAPSHOT: OneCGateway = OneCGateway("snapshot")
         public val FAKE: OneCGateway = OneCGateway("fake")
         public val CONNECTOR: OneCGateway = OneCGateway("connector")
+        public val MODULE: OneCGateway = OneCGateway("module")
 
         /** The values known to this version of the SDK. */
-        public val entries: List<OneCGateway> = listOf(ODATA, SNAPSHOT, FAKE, CONNECTOR)
+        public val entries: List<OneCGateway> = listOf(ODATA, SNAPSHOT, FAKE, CONNECTOR, MODULE)
     }
 }

@@ -41,6 +41,9 @@ public data class ChatDialogSummary(
      */
     @SerialName("id")
     public val id: String,
+    /** false — разговор «без памяти» */
+    @SerialName("memory")
+    public val memory: Boolean,
     /** Сколько сообщений в разговоре (вопросы и ответы) */
     @SerialName("message_count")
     public val messageCount: Double,

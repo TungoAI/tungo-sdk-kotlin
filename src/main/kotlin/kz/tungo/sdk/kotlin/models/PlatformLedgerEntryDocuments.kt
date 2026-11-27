@@ -38,7 +38,9 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  */
 @Serializable
 public data class PlatformLedgerEntryDocuments(
-    /** Номер акта выполненных работ (ACT-…), когда платёж прошёл; null — нет */
+    /**
+     * Устарело: номер акта (ACT-…) только у старых платежей; у новых — null, акт ежемесячный (GET /v1/workspaces/{ws}/documents)
+     */
     @SerialName("act_number")
     public val actNumber: String?,
     /** Номер счёта на оплату по этому пополнению (TG-…); null — нет */

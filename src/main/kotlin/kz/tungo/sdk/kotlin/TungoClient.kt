@@ -18,6 +18,8 @@ import kz.tungo.sdk.kotlin.resources.FormsResource
 import kz.tungo.sdk.kotlin.resources.OnecResource
 import kz.tungo.sdk.kotlin.resources.PlatformResource
 import kz.tungo.sdk.kotlin.resources.ProposalsResource
+import kz.tungo.sdk.kotlin.resources.ReleasesResource
+import kz.tungo.sdk.kotlin.resources.VerificationResource
 import kz.tungo.sdk.kotlin.resources.WebhooksResource
 import kz.tungo.sdk.kotlin.resources.WorkspacesResource
 import kz.tungo.sdk.kotlin.webhooks.TungoWebhooks
@@ -80,6 +82,14 @@ public class TungoClient internal constructor(
 
     /** Автоматизации компании: входящие хуки, сценарии, цепочки шагов, запуски и уровень автономности ИИ */
     public val automations: AutomationsResource = AutomationsResource(engine)
+
+    /**
+     * Публичная проверка электронной подписи документов Tungo: по коду, по файлу, по блоку QR и ключи подписи (без ключа API)
+     */
+    public val verification: VerificationResource = VerificationResource(engine)
+
+    /** Публичный список загрузок: расширение 1С и Tungo Connector (без ключа API) */
+    public val releases: ReleasesResource = ReleasesResource(engine)
 
     /**
      * Returns a client with some options changed. It shares the connection pool of this client,

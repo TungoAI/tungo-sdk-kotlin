@@ -36,9 +36,11 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 /** Запуск по событию хука. */
 @Serializable
 public data class AutomationTriggerHook(
-    /** Хук, события которого запускают сценарий (hk_…) */
+    /**
+     * Хук, события которого запускают сценарий; null — хук удалён: событиями сценарий больше не запускается, пока ему не назначат другой хук (PUT …/scenarios/{id}) (hk_…)
+     */
     @SerialName("hook_id")
-    public val hookId: String,
+    public val hookId: String?,
     @SerialName("filter")
     public val filter: AutomationEventFilter? = null,
     /** `hook` — по событию хука */

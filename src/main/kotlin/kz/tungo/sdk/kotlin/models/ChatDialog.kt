@@ -49,6 +49,11 @@ public data class ChatDialog(
      */
     @SerialName("masked")
     public val masked: Double,
+    /**
+     * false — разговор «без памяти» (выбран при создании): без памяти ИИ и поиска по прошлым разговорам — показать пометку в шапке
+     */
+    @SerialName("memory")
+    public val memory: Boolean,
     /** Сколько сообщений в messages */
     @SerialName("message_count")
     public val messageCount: Double,

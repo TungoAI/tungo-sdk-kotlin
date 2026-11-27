@@ -43,6 +43,11 @@ public data class PlatformAutoReload(
     @SerialName("enabled")
     public val enabled: Boolean,
     /**
+     * Автопополнений за календарный месяц по Алматы не больше этого; месячный потолок трат исчерпан — автопополнения нет
+     */
+    @SerialName("monthly_count_max")
+    public val monthlyCountMax: Long,
+    /**
      * Сколько автопополнение может списать за месяц, в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸); null — предел платформы
      */
     @SerialName("monthly_limit_tiyn")

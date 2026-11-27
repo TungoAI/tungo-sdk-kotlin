@@ -33,16 +33,25 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Файл к вопросу: PDF, скан, Excel, Word, выписка */
+/**
+ * Файл к вопросу: PDF, скан, Excel, Word (.docx, .doc), выписка, архив (.zip, .rar, .7z) — base64 в теле или upload_id загрузки по частям
+ *
+ * One of: ChatAttachmentData, ChatAttachmentUpload. The value is kept as JSON in [json]; the accessors return null when it has another shape.
+ */
 @Serializable
-public data class ChatAttachment(
-    /** Содержимое файла в base64 (можно с префиксом data:…;base64,) */
-    @SerialName("data")
-    public val data: String,
-    /** Имя файла с расширением — по нему определяется тип */
-    @SerialName("name")
-    public val name: String,
-    /** MIME-тип; не обязателен: тип файла определяется по расширению и содержимому */
-    @SerialName("media_type")
-    public val mediaType: String? = null,
-)
+@JvmInline
+public value class ChatAttachment(public val json: JsonElement) {
+    /** The value when it has the shape of [ChatAttachmentData]. */
+    public fun asChatAttachmentData(): ChatAttachmentData? = (json as? JsonObject)?.decodeOrNull(ChatAttachmentData.serializer())
+
+    /** The value when it has the shape of [ChatAttachmentUpload]. */
+    public fun asChatAttachmentUpload(): ChatAttachmentUpload? = (json as? JsonObject)?.decodeOrNull(ChatAttachmentUpload.serializer())
+
+    override fun toString(): String = json.toString()
+
+    public companion object {
+        public fun of(value: ChatAttachmentData): ChatAttachment = ChatAttachment(TungoJson.encoder.encodeToJsonElement(ChatAttachmentData.serializer(), value))
+
+        public fun of(value: ChatAttachmentUpload): ChatAttachment = ChatAttachment(TungoJson.encoder.encodeToJsonElement(ChatAttachmentUpload.serializer(), value))
+    }
+}

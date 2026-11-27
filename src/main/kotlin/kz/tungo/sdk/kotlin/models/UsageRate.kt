@@ -58,6 +58,11 @@ public data class UsageRate(
     @SerialName("input_per_mtok_tiyn")
     public val inputPerMtokTiyn: Long,
     /**
+     * Длинный контекст: если вход вызова вместе с кэшем длиннее above_tokens, весь вызов считается по этим ценам (как в прайсе провайдера); null — у модели одна цена
+     */
+    @SerialName("long_context")
+    public val longContext: UsageRateLongContext?,
+    /**
      * Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search — поиск по нормам, tungo-legacy — прежняя)
      */
     @SerialName("model")
@@ -68,4 +73,9 @@ public data class UsageRate(
     /** Название модели для людей */
     @SerialName("title")
     public val title: String,
+    /**
+     * Цена 1000 запросов поиска на официальных сайтах РК (когда нормы нет в базе знаний); 0 — модель не ищет в интернете в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+     */
+    @SerialName("web_search_per_1k_tiyn")
+    public val webSearchPer1kTiyn: Long,
 )

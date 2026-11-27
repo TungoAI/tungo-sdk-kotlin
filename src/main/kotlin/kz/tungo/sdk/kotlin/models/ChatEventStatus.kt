@@ -40,7 +40,12 @@ public data class ChatEventStatus(
     @SerialName("text")
     public val text: String,
     /**
-     * Что происходит: - `compacting` — сервер сжимает историю длинного разговора - `escalating` — ответ перепроверяется более сильной моделью — ход займёт дольше - `elsewhere` — ответ готовится на другом сервере Tungo — он поя…
+     * Только у code = writing: сколько знаков ответа уже написано (не убывает в пределах одного ответа). Текста ответа в событии нет — он придёт событием text
+     */
+    @SerialName("chars")
+    public val chars: Long? = null,
+    /**
+     * Что происходит: - `compacting` — сервер сжимает историю длинного разговора - `escalating` — ответ перепроверяется более сильной моделью — ход займёт дольше - `checking_norm` — ответ сослался на норму, не открыв её: та же…
      */
     @SerialName("code")
     public val code: ChatEventStatusCode? = null,

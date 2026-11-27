@@ -143,6 +143,74 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
         withRawResponse.countTokens(body, companyId, requestOptions).body
 
     /**
+     * Файлы от ИИ в своих разговорах, новые сверху
+     *
+     * `GET /v1/companies/{co}/chat/files`
+     *
+     * Returns one page; [Page.next] requests the following one with the same filters.
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param cursor next_cursor прошлой страницы; без него — самые новые файлы. Фильтры — те же, что у первой страницы
+     * @param dialogId Только из этого разговора
+     * @param format Только этого формата: xlsx, docx, pdf или csv
+     * @param limit Сколько на странице: 1–200, по умолчанию 50
+     * @param q Подстрока имени файла, без учёта регистра
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun listFiles(
+        cursor: String? = null,
+        dialogId: String? = null,
+        format: ListCompanyChatFilesFormat? = null,
+        limit: Int? = null,
+        q: String? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): Page<ChatFileItem, ChatFileList> {
+        val response = engine.json(
+            RequestSpec(
+                method = "GET",
+                path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/files",
+                auth = AuthMode.KEY,
+                query = QueryBuilder().add("cursor", cursor).add("dialog_id", dialogId).add("format", format?.value).add("limit", limit).add("q", q),
+            ),
+            requestOptions,
+            ChatFileList.serializer(),
+        )
+        return Page(response.body.data, response.body.nextCursor, response, cursor) { next ->
+            listFiles(next, dialogId, format, limit, q, companyId, requestOptions)
+        }
+    }
+
+    /**
+     * Файлы от ИИ в своих разговорах, новые сверху
+     *
+     * `GET /v1/companies/{co}/chat/files`
+     *
+     * Returns a cold flow of every item: pages are requested one by one while the flow is collected, starting at [cursor].
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param cursor next_cursor прошлой страницы; без него — самые новые файлы. Фильтры — те же, что у первой страницы
+     * @param dialogId Только из этого разговора
+     * @param format Только этого формата: xlsx, docx, pdf или csv
+     * @param limit Сколько на странице: 1–200, по умолчанию 50
+     * @param q Подстрока имени файла, без учёта регистра
+     * @param companyId the company; by default the company of the client
+     */
+    public fun listFilesAll(
+        cursor: String? = null,
+        dialogId: String? = null,
+        format: ListCompanyChatFilesFormat? = null,
+        limit: Int? = null,
+        q: String? = null,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): Flow<ChatFileItem> = flow {
+        emitAll(listFiles(cursor, dialogId, format, limit, q, companyId, requestOptions).asFlow())
+    }
+
+    /**
      * Что можно упомянуть через «@»
      *
      * `GET /v1/companies/{co}/chat/mentions`
@@ -196,6 +264,60 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
         requestOptions: RequestOptions = RequestOptions.Default,
     ): ChatSuggestions =
         withRawResponse.listSuggestions(lang, companyId, requestOptions).body
+
+    /**
+     * Начать загрузку архива к сообщению
+     *
+     * `POST /v1/companies/{co}/chat/uploads`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param body the request body
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun createUpload(
+        body: ChatUploadCreate,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatUpload =
+        withRawResponse.createUpload(body, companyId, requestOptions).body
+
+    /**
+     * Отменить загрузку архива
+     *
+     * `DELETE /v1/companies/{co}/chat/uploads/{upload}`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param upload id загрузки (upl_…)
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun deleteUpload(
+        upload: String,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ) {
+        withRawResponse.deleteUpload(upload, companyId, requestOptions)
+    }
+
+    /**
+     * Часть архива
+     *
+     * `PUT /v1/companies/{co}/chat/uploads/{upload}/parts/{n}`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param upload id загрузки (upl_…)
+     * @param n Номер части с 0
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun putUploadPart(
+        upload: String,
+        n: String,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatUploadPart =
+        withRawResponse.putUploadPart(upload, n, companyId, requestOptions).body
 
     /**
      * Разговор целиком
@@ -408,6 +530,25 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
     ): ChatStopResult =
         withRawResponse.stop(id, companyId, requestOptions).body
 
+    /**
+     * Перевести размышление на русский
+     *
+     * `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate`
+     *
+     * Required permission: `chat.use`.
+     *
+     * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+     * @param tid id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
+     * @param companyId the company; by default the company of the client
+     */
+    public suspend fun translateThinking(
+        id: String,
+        tid: String,
+        companyId: String? = null,
+        requestOptions: RequestOptions = RequestOptions.Default,
+    ): ChatThinkingTranslation =
+        withRawResponse.translateThinking(id, tid, companyId, requestOptions).body
+
     /** Variant of [ChatResource] whose functions also return the response status and headers. */
     public inner class WithRawResponse internal constructor() {
         /**
@@ -579,6 +720,83 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
                 ),
                 requestOptions,
                 ChatSuggestions.serializer(),
+            )
+
+        /**
+         * Начать загрузку архива к сообщению
+         *
+         * `POST /v1/companies/{co}/chat/uploads`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param body the request body
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun createUpload(
+            body: ChatUploadCreate,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatUpload> =
+            engine.json(
+                RequestSpec(
+                    method = "POST",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/uploads",
+                    auth = AuthMode.KEY,
+                    payload = engine.jsonPayload(ChatUploadCreate.serializer(), body),
+                ),
+                requestOptions,
+                ChatUpload.serializer(),
+            )
+
+        /**
+         * Отменить загрузку архива
+         *
+         * `DELETE /v1/companies/{co}/chat/uploads/{upload}`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param upload id загрузки (upl_…)
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun deleteUpload(
+            upload: String,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<Unit> =
+            engine.empty(
+                RequestSpec(
+                    method = "DELETE",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/uploads/" + pathSegment("upload", upload),
+                    auth = AuthMode.KEY,
+                ),
+                requestOptions,
+            )
+
+        /**
+         * Часть архива
+         *
+         * `PUT /v1/companies/{co}/chat/uploads/{upload}/parts/{n}`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param upload id загрузки (upl_…)
+         * @param n Номер части с 0
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun putUploadPart(
+            upload: String,
+            n: String,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatUploadPart> =
+            engine.json(
+                RequestSpec(
+                    method = "PUT",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/uploads/" + pathSegment("upload", upload) + "/parts/" + pathSegment("n", n),
+                    auth = AuthMode.KEY,
+                ),
+                requestOptions,
+                ChatUploadPart.serializer(),
             )
 
         /**
@@ -891,6 +1109,33 @@ public class ChatResource internal constructor(internal val engine: HttpEngine) 
                 ),
                 requestOptions,
                 ChatStopResult.serializer(),
+            )
+
+        /**
+         * Перевести размышление на русский
+         *
+         * `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate`
+         *
+         * Required permission: `chat.use`.
+         *
+         * @param id id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+         * @param tid id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
+         * @param companyId the company; by default the company of the client
+         */
+        public suspend fun translateThinking(
+            id: String,
+            tid: String,
+            companyId: String? = null,
+            requestOptions: RequestOptions = RequestOptions.Default,
+        ): ApiResponse<ChatThinkingTranslation> =
+            engine.json(
+                RequestSpec(
+                    method = "POST",
+                    path = "/v1/companies/" + pathSegment("companyId", engine.companyId(companyId)) + "/chat/" + pathSegment("id", id) + "/thinking/" + pathSegment("tid", tid) + "/translate",
+                    auth = AuthMode.KEY,
+                ),
+                requestOptions,
+                ChatThinkingTranslation.serializer(),
             )
     }
 }

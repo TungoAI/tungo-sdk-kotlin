@@ -33,12 +33,24 @@ import kz.tungo.sdk.kotlin.internal.decodeOrNull
 import kz.tungo.sdk.kotlin.internal.hasConst
 import kz.tungo.sdk.kotlin.internal.stringOrNull
 
-/** Размышление модели (по-русски), кусками — можно показать свёрнутым блоком */
+/**
+ * Размышление модели кусками — можно показать свёрнутым блоком. Блок не по-русски приходит целиком в конце блока: original и translate_id
+ */
 @Serializable
 public data class ChatEventThinking(
-    /** Новый кусок размышления */
+    /**
+     * Новый кусок размышления по-русски; у блока не по-русски — пометка «Обдумываю…» (пусто, если она уже стоит)
+     */
     @SerialName("delta")
     public val delta: String,
+    /** Блок не по-русски целиком, как его написала модель */
+    @SerialName("original")
+    public val original: String? = null,
+    /**
+     * id блока для перевода: POST …/chat/{id}/thinking/{translate_id}/translate — после ответа, когда человек раскрыл шаги
+     */
+    @SerialName("translate_id")
+    public val translateId: String? = null,
     /** Вид события: thinking */
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     @SerialName("type")

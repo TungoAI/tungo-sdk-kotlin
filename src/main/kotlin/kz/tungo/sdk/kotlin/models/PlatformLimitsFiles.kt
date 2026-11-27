@@ -36,6 +36,17 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 /** Размеры файлов и тел запросов */
 @Serializable
 public data class PlatformLimitsFiles(
+    /**
+     * Один архив, байт; в attachments_total_bytes не входит. Больше attachment_bytes — только загрузкой по частям (POST …/chat/uploads)
+     */
+    @SerialName("archive_bytes")
+    public val archiveBytes: Long,
+    /** Файлов в архиве вместе с вложенными архивами */
+    @SerialName("archive_files")
+    public val archiveFiles: Long,
+    /** Архивов (.zip, .rar, .7z) в одном сообщении */
+    @SerialName("archives_per_message")
+    public val archivesPerMessage: Long,
     /** Один файл, байт (до кодирования в base64) */
     @SerialName("attachment_bytes")
     public val attachmentBytes: Long,
@@ -63,4 +74,7 @@ public data class PlatformLimitsFiles(
     /** Тело остальных запросов, байт; больше — 413 payload_too_large */
     @SerialName("request_bytes")
     public val requestBytes: Long,
+    /** Часть загрузки архива (PUT …/chat/uploads/{upload_id}/parts/{n}), байт; последняя — остаток */
+    @SerialName("upload_part_bytes")
+    public val uploadPartBytes: Long,
 )

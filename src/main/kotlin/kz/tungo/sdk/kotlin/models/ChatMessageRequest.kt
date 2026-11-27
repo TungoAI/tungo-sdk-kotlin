@@ -37,7 +37,7 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
 @Serializable
 public data class ChatMessageRequest(
     /**
-     * Файлы к вопросу. До 5 файлов, каждый до 10 МБ, все вместе до 14 МБ (до кодирования в base64). Картинка — до 5 МБ, PDF — до 100 страниц. Форматы (по расширению имени): .pdf, .jpg, .jpeg, .png, .webp, .docx, .xlsx, .xls, .…
+     * Файлы к вопросу. До 5 файлов, каждый до 10 МБ, все вместе до 14 МБ (до кодирования в base64). Картинка — до 5 МБ, PDF — до 100 страниц. Форматы (по расширению имени): .pdf, .jpg, .jpeg, .png, .webp, .svg, .docx, .doc, .x…
      */
     @SerialName("attachments")
     public val attachments: List<ChatAttachment>? = null,
@@ -54,6 +54,11 @@ public data class ChatMessageRequest(
      */
     @SerialName("effort")
     public val effort: NullableField<ChatMessageRequestEffort> = NullableField.Absent,
+    /**
+     * false — разговор «без памяти»: ИИ не видит, что запомнил раньше, ничего не запоминает и не ищет по прошлым разговорам, а сам разговор не попадает в поиск. Действует только в первом сообщении нового разговора и не меняетс…
+     */
+    @SerialName("memory")
+    public val memory: Boolean? = null,
     /**
      * Упоминания через «@» в этом вопросе, до 10: ИИ получит их вместе с вопросом. Каждое проверяется на доступ: нет объекта в этой компании или нет права его видеть — 404 (error.code = mention_not_found, error.index — номер в…
      */

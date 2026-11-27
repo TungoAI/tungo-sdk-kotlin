@@ -51,6 +51,8 @@ public data class ChatUserMessage(
     /** Упоминания через «@» в этом вопросе, если были: вид, id и название на момент отправки */
     @SerialName("mentions")
     public val mentions: List<ChatHistoryMention>? = null,
+    @SerialName("onec_object")
+    public val onecObject: ChatOnecObject? = null,
     /**
      * Вопрос идущего хода: ответа ещё нет, его дочитывают потоком (GET …/chat/{id}/events?turn=). Только у последнего сообщения
      */

@@ -65,9 +65,14 @@ public data class ChatAssistantMessage(
     /** done — ход закончился сам; stopped — нажали «Стоп»; error — ошибка, отказ модели или предел шагов */
     @SerialName("state")
     public val state: ChatAssistantMessageState,
-    /** Размышления модели за ход одним текстом; пусто — не было */
+    /**
+     * Размышления модели за ход одним текстом; блок не по-русски без перевода — пометкой «Обдумываю…»; пусто — не было
+     */
     @SerialName("thinking")
     public val thinking: String,
+    /** Те же размышления по блокам: блок не по-русски без перевода — оригиналом с translate_id */
+    @SerialName("thinking_parts")
+    public val thinkingParts: List<ChatThinkingPart>,
     /**
      * Номер ответа в разговоре (он же X-Turn-No и средняя часть id): по нему ответ оценивают — PUT …/chat/{id}/messages/{turn}/rating
      */

@@ -40,7 +40,7 @@ public data class OneCStatus(
     @SerialName("connected")
     public val connected: Boolean,
     /**
-     * Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; snapshot — загруженная копия базы, только чтение; fake — только в тестах; null — не подключ…
+     * Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; module — через расширение «Tungo в 1С», пока у человека открыта 1С; snapshot — загруженная …
      */
     @SerialName("gateway")
     public val gateway: OneCGateway?,

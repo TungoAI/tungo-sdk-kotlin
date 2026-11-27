@@ -37,6 +37,8 @@ import kz.tungo.sdk.kotlin.internal.stringOrNull
  * Что происходит:
  * - `compacting` — сервер сжимает историю длинного разговора
  * - `escalating` — ответ перепроверяется более сильной моделью — ход займёт дольше
+ * - `checking_norm` — ответ сослался на норму, не открыв её: та же модель открывает норму и пишет ответ заново — показанный текст заменит ответ события done
+ * - `writing` — ответ пишется, но его текст придержан до проверки ссылок на нормы: chars — сколько знаков текста этого витка уже написано (растёт, не чаще ~5 событий в секунду), самого текста в событии нет. Текст витка придёт событием text целиком после проверки; checking_norm или escalating — ответ пишется заново, показанный счёт сбросить
  * - `elsewhere` — ответ готовится на другом сервере Tungo — он появится целиком, когда будет готов (событие done со stop_reason elsewhere)
  *
  * An open enumeration: a value this version of the SDK does not know is kept as it is, see [isKnown].
@@ -52,9 +54,11 @@ public value class ChatEventStatusCode(public val value: String) {
     public companion object {
         public val COMPACTING: ChatEventStatusCode = ChatEventStatusCode("compacting")
         public val ESCALATING: ChatEventStatusCode = ChatEventStatusCode("escalating")
+        public val CHECKING_NORM: ChatEventStatusCode = ChatEventStatusCode("checking_norm")
+        public val WRITING: ChatEventStatusCode = ChatEventStatusCode("writing")
         public val ELSEWHERE: ChatEventStatusCode = ChatEventStatusCode("elsewhere")
 
         /** The values known to this version of the SDK. */
-        public val entries: List<ChatEventStatusCode> = listOf(COMPACTING, ESCALATING, ELSEWHERE)
+        public val entries: List<ChatEventStatusCode> = listOf(COMPACTING, ESCALATING, CHECKING_NORM, WRITING, ELSEWHERE)
     }
 }
